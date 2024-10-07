@@ -3,7 +3,7 @@
 ## Installation
 
 1. [Download the scripts](https://github.com/mudzereli/UB-LUA-Scripts/archive/refs/heads/main.zip)
-2. Extract the script folders to your `UtilityBelt\scripts` folder.
+2. Extract the folders for the scripts you want to use to your `UtilityBelt\scripts` folder.
     - Usually `C:\Users\<username>\Documents\Decal Plugins\UtilityBelt\scripts`
 3. Make sure your [Decal](https://www.decaldev.com) is up to date: `2.9.8.3`
 4. Make sure you are using the latest beta of [UtilityBelt](https://gitlab.com/utilitybelt/utilitybelt.gitlab.io/-/packages/)
