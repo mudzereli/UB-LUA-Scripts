@@ -5,6 +5,7 @@ local markerscalex = 0.3
 local markerscaley = 1
 local markerscalez = 1
 local markers = {}
+local version = "1.0.0.0"
 
 -- -- -- EVENT HANDLERS
 
@@ -72,6 +73,8 @@ function MarkRareCorpse(objID)
         markers[objID] = marker
     end
 end
+
+print("[LUA]: Loading RarePointer v"..version)
 
 -- this should mark corpses whenever they're created
 game.World.OnObjectCreated.Add(OnWorldObjectCreated)
