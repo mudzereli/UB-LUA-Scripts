@@ -1,11 +1,15 @@
 local acclient = require("acclient")
-local markercolor = 0xFFc0392b
+local ubviews = require("utilitybelt.views")
+local im = require("imgui")
+local imgui = im.ImGui
+local markercolor = 0xFFFFFF00
 local markerdistance = 0.2
-local markerscalex = 0.3
+local markerscalex = 0.5
 local markerscaley = 1
 local markerscalez = 1
 local markers = {}
-local version = "1.0.0.0"
+local debug = false
+local version = "1.1.0"
 
 -- -- -- EVENT HANDLERS
 
@@ -60,7 +64,7 @@ function MarkRareCorpse(objID)
     local corpse = game.World.Get(objID)
     local longdesc = corpse.StringValues[StringId.LongDesc]
 
-    if string.find(longdesc, "This corpse generated a rare item!") then
+    if debug or string.find(longdesc, "This corpse generated a rare item!") then
         local marker = acclient.DecalD3D.NewD3DObj()
         marker.SetShape(acclient.DecalD3DShape.VerticalArrow)
         marker.ScaleX = markerscalex
@@ -75,6 +79,32 @@ function MarkRareCorpse(objID)
 end
 
 print("[LUA]: Loading RarePointer v"..version)
+
+local hud = ubviews.Huds.CreateHud("RarePointer v"..version)
+hud.ShowInBar = true
+hud.WindowSettings = im.ImGuiWindowFlags.AlwaysAutoResize
+
+local markercolor_str = string.format("%08X", markercolor) -- Convert initial markercolor to hex string
+
+hud.OnRender.Add(function()
+    -- Checkbox for debug mode
+    if imgui.Checkbox("Debug", debug) then
+        debug = not debug
+    end
+
+    -- Input text for marker color
+    local inputChanged, textResult = imgui.InputText("Marker Color (Hex)", markercolor_str, 500)
+
+    if inputChanged then
+        markercolor_str = textResult -- Update the string only when the user changes it
+        -- Try to convert the string to a hex number
+        local new_markercolor = tonumber(markercolor_str, 16)
+        if new_markercolor then
+            markercolor = new_markercolor -- Only update markercolor if conversion is successful
+        end
+    end
+end)
+
 
 -- this should mark corpses whenever they're created
 game.World.OnObjectCreated.Add(OnWorldObjectCreated)
