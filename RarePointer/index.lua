@@ -96,11 +96,16 @@ hud.OnRender.Add(function()
     local inputChanged, textResult = imgui.InputText("Marker Color (Hex)", markercolor_str, 500)
 
     if inputChanged then
-        markercolor_str = textResult -- Update the string only when the user changes it
-        -- Try to convert the string to a hex number
-        local new_markercolor = tonumber(markercolor_str, 16)
-        if new_markercolor then
-            markercolor = new_markercolor -- Only update markercolor if conversion is successful
+        -- Ensure textResult is a string
+        if textResult and type(textResult) == "string" then
+            markercolor_str = textResult -- Update the string only when the user changes it
+            -- Try to convert the string to a hex number
+            local new_markercolor = tonumber(markercolor_str, 16)
+            if new_markercolor then
+                markercolor = new_markercolor -- Only update markercolor if conversion is successful
+            end
+        else
+            markercolor_str = "FFFFFF00" -- Assign a default value if textResult is nil or not a string
         end
     end
 end)
