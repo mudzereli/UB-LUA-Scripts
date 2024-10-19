@@ -1,11 +1,16 @@
 local acclient = require("acclient")
-local markercolor = 0xFFc0392b
+local ubviews = require("utilitybelt.views")
+local im = require("imgui")
+local imgui = im.ImGui
+local markercolor = 0xFFFFFF00
+local markerscalemultiplier = 1
 local markerdistance = 0.2
-local markerscalex = 0.3
+local markerscalex = 0.5
 local markerscaley = 1
 local markerscalez = 1
 local markers = {}
-local version = "1.0.0.0"
+local debug = false
+local version = "1.1.0"
 
 -- -- -- EVENT HANDLERS
 
@@ -45,6 +50,7 @@ end
 -- this is a callback function which happens when the script ends
 ---@param evt ScriptEventArgs
 function OnScriptEnd(evt) 
+    print("Turning off RarePointer v"..version.." and Disposing of "..#markers.." markers")
     for i = #markers, 1, -1 do
         local value = markers[i]
         ---@type DecalD3DShape
@@ -60,7 +66,7 @@ function MarkRareCorpse(objID)
     local corpse = game.World.Get(objID)
     local longdesc = corpse.StringValues[StringId.LongDesc]
 
-    if string.find(longdesc, "This corpse generated a rare item!") then
+    if debug or string.find(longdesc, "This corpse generated a rare item!") then
         local marker = acclient.DecalD3D.NewD3DObj()
         marker.SetShape(acclient.DecalD3DShape.VerticalArrow)
         marker.ScaleX = markerscalex
@@ -70,11 +76,54 @@ function MarkRareCorpse(objID)
         marker.Anchor(objID,markerdistance,0,0,0)
         marker.Visible = true
         -- marker.OrientToPlayer(true)
-        markers[objID] = marker
+        table.insert(markers,marker)
     end
 end
 
 print("[LUA]: Loading RarePointer v"..version)
+
+local hud = ubviews.Huds.CreateHud("RarePointer v"..version)
+hud.ShowInBar = true
+hud.WindowSettings = im.ImGuiWindowFlags.AlwaysAutoResize
+
+local markercolor_str = string.format("%08X", markercolor) -- Convert initial markercolor to hex string
+
+hud.OnRender.Add(function()
+    -- Checkbox for debug mode
+    if imgui.Checkbox("Debug", debug) then
+        debug = not debug
+    end
+    -- Input text for marker color
+    local txtMarkerColorChanged, txtMarkerColorResult = imgui.InputText("Marker Color (Hex)", markercolor_str, 500)
+    local fMarkerDistanceChanged, fMarkerDistanceResult = imgui.InputFloat("Marker Distance",markerdistance)
+    local fMarkerScaleChanged, fMarkerScaleResult = imgui.InputFloat("Marker Scale Multiplier",markerscalemultiplier)
+
+    if fMarkerScaleChanged and type(fMarkerScaleResult) == "number" then
+        markerscalemultiplier = fMarkerScaleResult
+        markerscalex = 0.5 * fMarkerScaleResult
+        markerscaley = 1 * fMarkerScaleResult
+        markerscalez = 1 * fMarkerScaleResult
+    end
+
+    if fMarkerDistanceChanged and type(fMarkerDistanceResult) == "number" then
+        markerdistance = fMarkerDistanceResult
+    end
+    
+    if txtMarkerColorChanged then
+        -- Ensure textResult is a string
+        if txtMarkerColorResult and type(txtMarkerColorResult) == "string" then
+            markercolor_str = txtMarkerColorResult -- Update the string only when the user changes it
+            -- Try to convert the string to a hex number
+            local new_markercolor = tonumber(markercolor_str, 16)
+            if new_markercolor then
+                markercolor = new_markercolor -- Only update markercolor if conversion is successful
+            end
+        else
+            markercolor_str = "FFFFFF00" -- Assign a default value if textResult is nil or not a string
+        end
+    end
+end)
+
 
 -- this should mark corpses whenever they're created
 game.World.OnObjectCreated.Add(OnWorldObjectCreated)
