@@ -3,6 +3,7 @@ local ubviews = require("utilitybelt.views")
 local im = require("imgui")
 local imgui = im.ImGui
 local markercolor = 0xFFFFFF00
+local markerscalemultiplier = 1
 local markerdistance = 0.2
 local markerscalex = 0.5
 local markerscaley = 1
@@ -49,6 +50,7 @@ end
 -- this is a callback function which happens when the script ends
 ---@param evt ScriptEventArgs
 function OnScriptEnd(evt) 
+    print("Turning off RarePointer v"..version.." and Disposing of "..#markers.." markers")
     for i = #markers, 1, -1 do
         local value = markers[i]
         ---@type DecalD3DShape
@@ -74,7 +76,7 @@ function MarkRareCorpse(objID)
         marker.Anchor(objID,markerdistance,0,0,0)
         marker.Visible = true
         -- marker.OrientToPlayer(true)
-        markers[objID] = marker
+        table.insert(markers,marker)
     end
 end
 
@@ -91,14 +93,26 @@ hud.OnRender.Add(function()
     if imgui.Checkbox("Debug", debug) then
         debug = not debug
     end
-
     -- Input text for marker color
-    local inputChanged, textResult = imgui.InputText("Marker Color (Hex)", markercolor_str, 500)
+    local txtMarkerColorChanged, txtMarkerColorResult = imgui.InputText("Marker Color (Hex)", markercolor_str, 500)
+    local fMarkerDistanceChanged, fMarkerDistanceResult = imgui.InputFloat("Marker Distance",markerdistance)
+    local fMarkerScaleChanged, fMarkerScaleResult = imgui.InputFloat("Marker Scale Multiplier",markerscalemultiplier)
 
-    if inputChanged then
+    if fMarkerScaleChanged and type(fMarkerScaleResult) == "number" then
+        markerscalemultiplier = fMarkerScaleResult
+        markerscalex = 0.5 * fMarkerScaleResult
+        markerscaley = 1 * fMarkerScaleResult
+        markerscalez = 1 * fMarkerScaleResult
+    end
+
+    if fMarkerDistanceChanged and type(fMarkerDistanceResult) == "number" then
+        markerdistance = fMarkerDistanceResult
+    end
+    
+    if txtMarkerColorChanged then
         -- Ensure textResult is a string
-        if textResult and type(textResult) == "string" then
-            markercolor_str = textResult -- Update the string only when the user changes it
+        if txtMarkerColorResult and type(txtMarkerColorResult) == "string" then
+            markercolor_str = txtMarkerColorResult -- Update the string only when the user changes it
             -- Try to convert the string to a hex number
             local new_markercolor = tonumber(markercolor_str, 16)
             if new_markercolor then
