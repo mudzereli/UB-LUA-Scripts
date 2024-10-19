@@ -12,7 +12,7 @@
 ### RarePointer 
 - Upon loading, it marks all existing corpses containing Rare Items with an arrow.
 - After loading, any new corpses that are created and contain Rare Items are also marked with an arrow.
-- Arrow color & size can be edited within the script.
+- Some options such as Arrow Color & Size are configurable in the UI which is accessible through the Script Hud Bar
 
 ### SummonScribe
 - Upon loading, all summons are inscribed with their percentage of max damage output.
