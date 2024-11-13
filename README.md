@@ -18,5 +18,5 @@
 - Will inscribe all summons with their percentage of max damage output.
 - Load the script and then press the `Run Summon Scribe` button from the Script Hud Bar
 - Pre-score inscription message and decimal rounding can be changed from the UI which is accessible through the Script Hud Bar
-- >[!WARNING]
-- > Items outside of the main pack are not counted as Character Inventory in GDLE, so if you run this script on GDLE, then make sure the summons are in your main pack!- 
+>[!WARNING]
+> Items outside of the main pack are not counted as Character Inventory in GDLE, so if you run this script on GDLE, then make sure the summons are in your main pack!
