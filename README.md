@@ -20,3 +20,8 @@
 - Pre-score inscription message and decimal rounding can be changed from the UI which is accessible through the Script Hud Bar.
 >[!WARNING]
 > Items outside of the main pack are not counted as Character Inventory in GDLE, so if you run this script on GDLE, then make sure the summons are in your main pack!
+
+### NavTogether
+- This LUA script is designed so that your main character can run a Nav with other characters following, but it will stop Navigation on the main character if the fellowship members get too far away
+- Load the script and then press the `Run NavTogether` button from the Script Hud Bar.
+- Interval between Distance Checks and Allowable Range can be changed from the UI which is accessible through the Script Hud Bar.
