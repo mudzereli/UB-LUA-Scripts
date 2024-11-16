@@ -1,4 +1,4 @@
-local maxDistance = 5
+local maxDistance = 20
 local intervalRangeCheck = 2
 local debug = false
 local tickcount = 0
@@ -11,15 +11,16 @@ local version = "1.0.0"
 
 -- this function checks the distance between fellow members from the main character and disables nav if they're too far away
 function CheckDistance()
-    if debug then print("NavTogether: Checking Distance") end
+    if debug then print("NavTogether: Checking Distance : allInRange = "..tostring(allInRange).." > wasAllInRange = "..tostring(wasAllInRange)) end
     local fellowship = game.Character.Fellowship.Members
     allInRange = true  -- Assume all are in range initially
 
     for i in pairs(fellowship) do
         ---@type FellowshipMember
         local member = fellowship[i]
-        local distance = game.Character.Weenie.DistanceTo3D(member.Id)
+        local distance = game.Character.Weenie.DistanceTo2D(game.World.Get(member.Id))
         if (distance > maxDistance) then
+            if debug then print("Character out of range: "..member.Name.." distance = "..tostring(distance)) end
             allInRange = false  -- Set to false if any member is out of range
             break
         end
@@ -29,10 +30,10 @@ function CheckDistance()
     if allInRange ~= wasAllInRange then
         if allInRange then
             if debug then print("NavTogether: Enabling Navigation") end
-            game.Actions.InvokeChat("/vt opt set EnableNav true")
+            await(game.Actions.InvokeChat("/vt opt set EnableNav true"))
         else
             if debug then print("NavTogether: Disabling Navigation") end
-            game.Actions.InvokeChat("/vt opt set EnableNav false")
+            await(game.Actions.InvokeChat("/vt opt set EnableNav false"))
         end
         wasAllInRange = allInRange  -- Update the previous state
     end
