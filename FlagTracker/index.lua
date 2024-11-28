@@ -1,5 +1,6 @@
 local im = require("imgui")
 local ubviews = require("utilitybelt.views")
+--local bit = require("bit32")
 local imgui = im.ImGui
 local version = "1.0.0"
 
@@ -49,6 +50,20 @@ local augmentations = {
     {"Resistance Augs","Acid",IntId.AugmentationResistanceAcid,2},
     {"Resistance Augs","Lightning",IntId.AugmentationResistanceLightning,2}
 }
+local luminanceauras = {
+    {"+1 Skill Credit",IntId.SkillAlterationCount,2},
+    {"+1 Aetheria Proc Rating",IntId.LumAugSurgeChanceRating,5},
+    {"+1 Damage Reduction Rating",IntId.LumAugDamageReductionRating,5},
+    {"+1 Crit Reduction Rating",IntId.LumAugCritReductionRating,5},
+    {"+1 Damage Rating",IntId.LumAugDamageRating,5},
+    {"+1 Crit Damage Rating",IntId.LumAugCritDamageRating,5},
+    {"+1 Heal Rating",IntId.LumAugHealingRating,5},
+    {"+1 Equipment Mana Consumption Rating",IntId.LumAugItemManaUsage,5},
+    {"+1 Mana Stone Rating",IntId.LumAugItemManaGain,5},
+    {"+1 Aetheria Effect Rating",IntId.LumAugSurgeEffectRating,5},
+    {"+1 Vitality",IntId.LumAugVitality,5},
+    {"+1 All Skills",IntId.LumAugAllSkills,10},
+}
 local coloryellow = Vector4.new(1,1,0,1)
 local colorred = Vector4.new(1,0,0,1)
 local colorgreen = Vector4.new(0,1,0,1)
@@ -63,71 +78,73 @@ end)
 local hud = ubviews.Huds.CreateHud("FlagTracker v"..version)
 hud.ShowInBar = true
 hud.WindowSettings = im.ImGuiWindowFlags.AlwaysAutoResize
-local treeOpenStatus = {}
-treeOpenStatus["Stat Augs"] = false
-treeOpenStatus["Resistance Augs"] = false
-treeOpenStatus["Salvage Augs"] = false
 
 hud.OnRender.Add(function()
-    if not imgui.BeginTable("Augmentations", 2) then return end
-
-    local lastCategory = nil
-    local currentCategory = nil
-    local value = nil
-    local prefix = nil
-    local cap = nil
-    local color = nil
-    local treeRenderStatus = {}
-
-    for _, v in ipairs(augmentations) do
-        currentCategory = v[1]
-
-        -- Only create TreeNode when category changes
-        if currentCategory ~= lastCategory then
-            -- Close the previous TreeNode if it was open
-            if lastCategory ~= nil and treeRenderStatus[lastCategory] then
-                imgui.TreePop()
+    if imgui.Begin("FlagTracker") then
+        if imgui.BeginTabBar("Flag Tracker Bar") then
+            if imgui.BeginTabItem("Augmentations") then
+                if imgui.BeginTable("Augmentations", 2) then
+                    local lastCategory = nil
+                    for _, v in ipairs(augmentations) do
+                        local currentCategory = v[1]
+                        if currentCategory ~= lastCategory then
+                            imgui.TableNextRow()
+                            imgui.TableSetColumnIndex(0)
+                            -- Set the initial open state
+                            imgui.SeparatorText(currentCategory)
+                            lastCategory = currentCategory
+                        end
+                        local value = char.Value(v[3]) or 0
+                        local prefix = v[2]
+                        local cap = v[4]
+                        local color = coloryellow
+                        if value == cap then
+                            color = colorgreen
+                        elseif value < cap then
+                            color = colorred
+                        end
+                        imgui.TableNextRow()
+                        imgui.TableSetColumnIndex(0)
+                        imgui.TextColored(color, prefix)
+                        imgui.TableSetColumnIndex(1)
+                        imgui.TextColored(color, value .. "/" .. cap)
+                    end
+                    imgui.EndTable()
+                end
+                imgui.EndTabItem()
             end
 
-            -- Start a new TreeNode for the current category
-            imgui.TableNextRow()
-            imgui.TableSetColumnIndex(0)
-            if treeOpenStatus[currentCategory] == nil then
-                treeOpenStatus[currentCategory] = true
+            if imgui.BeginTabItem("Luminance Auras") then
+                if imgui.BeginTable("Luminance Auras", 2) then
+                    for _, v in ipairs(luminanceauras) do
+                        local value = char.Value(v[2]) or 0
+                        local prefix = v[1]
+                        local cap = v[3]
+                        local color = coloryellow
+
+                        if value == cap then
+                            color = colorgreen
+                        elseif value < cap then
+                            color = colorred
+                        end
+
+                        imgui.TableNextRow()
+                        imgui.TableSetColumnIndex(0)
+                        imgui.TextColored(color, prefix)
+                        imgui.TableSetColumnIndex(1)
+                        imgui.TextColored(color, value .. "/" .. cap)
+                    end
+                    imgui.EndTable()
+                end
+                imgui.EndTabItem()
             end
-            imgui.SetNextItemOpen(treeOpenStatus[currentCategory])
-            treeRenderStatus[currentCategory] = imgui.TreeNode(currentCategory)
+
+            if imgui.BeginTabItem("Quest Flags") then
+                imgui.EndTabItem()
+            end
+            imgui.EndTabBar()
         end
-        treeOpenStatus[currentCategory] = treeRenderStatus[currentCategory]
-
-        -- Render augmentation items inside the TreeNode
-        if treeRenderStatus[currentCategory] then
-            value = char.Value(v[3]) or 0
-            prefix = v[2]
-            cap = v[4]
-            color = coloryellow
-
-            if value == cap then
-                color = colorgreen
-            elseif value < cap then
-                color = colorred
-            end
-
-            imgui.TableNextRow()
-            imgui.TableSetColumnIndex(0)
-            imgui.TextColored(color, prefix)
-            imgui.TableSetColumnIndex(1)
-            imgui.TextColored(color, value .. "/" .. cap)
-        end
-
-        -- Update the lastCategory to the current category
-        lastCategory = currentCategory
+        imgui.End()
     end
-
-    -- Close the last TreeNode if it was open
-    if lastCategory ~= nil and treeRenderStatus[lastCategory] then
-        imgui.TreePop()
-    end
-
-    imgui.EndTable()
+    imgui.ShowDemoWindow()
 end)
