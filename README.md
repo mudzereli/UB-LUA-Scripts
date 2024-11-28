@@ -25,3 +25,7 @@
 - This LUA script is designed so that your main character can run a Nav with other characters following, but it will stop Navigation on the main character if the fellowship members get too far away
 - Load the script and then press the `Run NavTogether` button from the Script Hud Bar.
 - Interval between Distance Checks and Allowable Range can be changed from the UI which is accessible through the Script Hud Bar.
+
+### FlagTracker
+- This LUA script is designed to view important one-time character flags such as Augmentations, Luminance Auras, and certain Quest Flags
+- Load the script and then open the UI from the Script Hud Bar.
