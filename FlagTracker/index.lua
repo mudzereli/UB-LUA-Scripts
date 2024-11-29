@@ -76,9 +76,13 @@ local characterflags = {
     {"Aetheria",typeAetheria,"Blue Aetheria (75)",IntId.AetheriaBitfield,1},
     {"Aetheria",typeAetheria,"Yellow Aetheria (150)",IntId.AetheriaBitfield,2},
     {"Aetheria",typeAetheria,"Red Aetheria (225)",IntId.AetheriaBitfield,4},
-    {"Augmentation Gems",typeQuest,"Sir Bellas","blankaugluminancetimer_0511",1,5},
-    {"Augmentation Gems",typeQuest,"Diemos","pickedupmarkerboss10x",1,5},
-    {"Augmentation Gems",typeQuest,"100K Luminance","augmentationblankgemacquired",1,5}
+    {"Augmentation Gems",typeQuest,"Sir Bellas","augmentationblankgemacquired",1,3},
+    {"Augmentation Gems",typeQuest,"Gladiator Diemos Token","pickedupmarkerboss10x",1,3},
+    {"Augmentation Gems",typeQuest,"100K Luminance Gem","blankaugluminancetimer_0511",1,3},
+    {"Other Flags",typeQuest,"Recall Aphus Lassel","recalltuskerisland",1,2},
+    {"Other Flags",typeQuest,"Candeth Keep Treehouse","strongholdbuildercomplete",1,2},
+    {"Other Flags",typeQuest,"Luminance Flag","oracleluminancerewardsaccess_1110",1,2},
+    {"Other Flags",typeQuest,"Diemos Access","golemstonediemosgiven",1,2}
     --"OracleLuminanceRewardsAccess_1110"
 }
 local coloryellow = Vector4.new(1,1,0,1)
@@ -106,10 +110,11 @@ end)
 
 hud.OnRender.Add(function()
     local char = game.Character.Weenie
-    local numColumns = 2
+    if char == nil then return end
     if imgui.BeginTabBar("Flag Tracker Bar") then
         -- Augmentations Tab
         if imgui.BeginTabItem("Augmentations") then
+            local numColumns = 2
             if imgui.BeginTable("Augmentations", numColumns*2) then
                 imgui.TableSetupColumn("Aug 1",im.ImGuiTableColumnFlags.WidthStretch,200)
                 imgui.TableSetupColumn("Aug 1 Points",im.ImGuiTableColumnFlags.WidthStretch,35)
@@ -231,9 +236,16 @@ hud.OnRender.Add(function()
                             local questinfo = quests[queststamp]
                             value = tonumber(0)
                             if questinfo ~= nil then
-                                value = tonumber(questinfo[questfield])
+                                if questfield == 3 then
+                                    local expiration = questinfo[questfield] + questinfo[6]
+                                    if expiration >= os.time() then
+                                        value = 1
+                                    end
+                                else
+                                    value = tonumber(questinfo[questfield])
+                                end
                             end
-                            if value == -1 then value = 0 end
+                            --if value == -1 then value = 0 end
                         elseif type == typeAetheria then
                             prefix = v[3]
                             local bitreq = v[5]
@@ -266,9 +278,10 @@ hud.OnRender.Add(function()
 
         -- General Quests Tab
         if imgui.BeginTabItem("Quests") then
-            if imgui.BeginTable("Quests", 5) then
+            if imgui.BeginTable("Quests", 6) then
                 imgui.TableSetupColumn("Quest",im.ImGuiTableColumnFlags.WidthStretch,128)
                 imgui.TableSetupColumn("Solves",im.ImGuiTableColumnFlags.WidthStretch,16)
+                imgui.TableSetupColumn("TimeStamp",im.ImGuiTableColumnFlags.WidthStretch,64)
                 imgui.TableSetupColumn("Description",im.ImGuiTableColumnFlags.WidthStretch,128)
                 imgui.TableSetupColumn("Num1",im.ImGuiTableColumnFlags.WidthStretch,16)
                 imgui.TableSetupColumn("Num2",im.ImGuiTableColumnFlags.WidthStretch,16)
@@ -281,10 +294,12 @@ hud.OnRender.Add(function()
                         imgui.TableSetColumnIndex(1)
                         imgui.TextColored(colorgreen, quest[2])
                         imgui.TableSetColumnIndex(2)
-                        imgui.TextColored(colorgreen, quest[4])
+                        imgui.TextColored(colorgreen, quest[3])
                         imgui.TableSetColumnIndex(3)
-                        imgui.TextColored(colorgreen, quest[5])
+                        imgui.TextColored(colorgreen, quest[4])
                         imgui.TableSetColumnIndex(4)
+                        imgui.TextColored(colorgreen, quest[5])
+                        imgui.TableSetColumnIndex(5)
                         imgui.TextColored(colorgreen, quest[6])
                     end
                 end
