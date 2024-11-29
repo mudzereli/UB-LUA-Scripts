@@ -279,12 +279,12 @@ hud.OnRender.Add(function()
         -- General Quests Tab
         if imgui.BeginTabItem("Quests") then
             if imgui.BeginTable("Quests", 6) then
-                imgui.TableSetupColumn("Quest",im.ImGuiTableColumnFlags.WidthStretch,128)
-                imgui.TableSetupColumn("Solves",im.ImGuiTableColumnFlags.WidthStretch,16)
-                imgui.TableSetupColumn("TimeStamp",im.ImGuiTableColumnFlags.WidthStretch,64)
-                imgui.TableSetupColumn("Description",im.ImGuiTableColumnFlags.WidthStretch,128)
-                imgui.TableSetupColumn("Num1",im.ImGuiTableColumnFlags.WidthStretch,16)
-                imgui.TableSetupColumn("Num2",im.ImGuiTableColumnFlags.WidthStretch,16)
+                imgui.TableSetupColumn("Quest",im.ImGuiTableColumnFlags.WidthFixed,256)
+                imgui.TableSetupColumn("Solves",im.ImGuiTableColumnFlags.WidthFixed,16)
+                imgui.TableSetupColumn("TimeStamp",im.ImGuiTableColumnFlags.WidthFixed,128)
+                imgui.TableSetupColumn("Description",im.ImGuiTableColumnFlags.WidthFixed,512)
+                imgui.TableSetupColumn("Num1",im.ImGuiTableColumnFlags.WidthFixed,16)
+                imgui.TableSetupColumn("Num2",im.ImGuiTableColumnFlags.WidthFixed,64)
                 for v in pairs(quests) do
                     local quest = quests[v]
                     if quest ~= nil then 
@@ -294,7 +294,7 @@ hud.OnRender.Add(function()
                         imgui.TableSetColumnIndex(1)
                         imgui.TextColored(colorgreen, quest[2])
                         imgui.TableSetColumnIndex(2)
-                        imgui.TextColored(colorgreen, quest[3])
+                        imgui.TextColored(colorgreen, tostring(os.date("%Y-%m-%d %H:%M:%S", quest[3])))
                         imgui.TableSetColumnIndex(3)
                         imgui.TextColored(colorgreen, quest[4])
                         imgui.TableSetColumnIndex(4)
