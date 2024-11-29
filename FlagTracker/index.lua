@@ -3,6 +3,7 @@ local ubviews = require("utilitybelt.views")
 --local bit = require("bit32")
 local imgui = im.ImGui
 local version = "1.0.0"
+local quests = {}
 
 local augmentations = {
     {"Death Augs","Keep Items",IntId.AugmentationLessDeathItemLoss,3},
@@ -51,63 +52,108 @@ local augmentations = {
     {"Resistance Augs","Lightning",IntId.AugmentationResistanceLightning,2}
 }
 local luminanceauras = {
-    {"+1 Skill Credit",IntId.SkillAlterationCount,2},
     {"+1 Aetheria Proc Rating",IntId.LumAugSurgeChanceRating,5},
     {"+1 Damage Reduction Rating",IntId.LumAugDamageReductionRating,5},
     {"+1 Crit Reduction Rating",IntId.LumAugCritReductionRating,5},
     {"+1 Damage Rating",IntId.LumAugDamageRating,5},
     {"+1 Crit Damage Rating",IntId.LumAugCritDamageRating,5},
     {"+1 Heal Rating",IntId.LumAugHealingRating,5},
-    {"+1 Equipment Mana Consumption Rating",IntId.LumAugItemManaUsage,5},
+    {"+1 Equipment Mana Rating",IntId.LumAugItemManaUsage,5},
     {"+1 Mana Stone Rating",IntId.LumAugItemManaGain,5},
-    {"+1 Aetheria Effect Rating",IntId.LumAugSurgeEffectRating,5},
-    {"+1 Vitality",IntId.LumAugVitality,5},
     {"+1 All Skills",IntId.LumAugAllSkills,10},
+    {"+2 Specialized Skills",IntId.LumAugSkilledSpec,5}
+    --{"+1 Aetheria Effect Rating",IntId.LumAugSurgeEffectRating,5},
+    --{"+1 Vitality",IntId.LumAugVitality,5},
+}
+local trackedquests = {
+    "lumaugskillquest",
+    "blankaugluminancetimer_0511",
+    "augmentationblankgemacquired",
+    "OswaldManualCompleted",
+    "arantahkill1",
+    "golemstonediemosgiven",
+    "pickedupmarkerboss10x",
+    "OracleLuminanceRewardsAccess_1110"
 }
 local coloryellow = Vector4.new(1,1,0,1)
 local colorred = Vector4.new(1,0,0,1)
 local colorgreen = Vector4.new(0,1,0,1)
-local char = nil
 
 print("[LUA]: Loading FlagTracker v"..version)
-
-game.OnStateChanged.Add(function()
-    char = game.Character.Weenie
-end)
 
 local hud = ubviews.Huds.CreateHud("FlagTracker v"..version)
 hud.ShowInBar = true
 hud.WindowSettings = im.ImGuiWindowFlags.AlwaysAutoResize
+local augTreeRenderStatus = {}
+local augTreeInitialOpenStatus = {}
+augTreeInitialOpenStatus["Stat Augs"] = false
+augTreeInitialOpenStatus["Resistance Augs"] = false
+
+game.World.OnChatText.Add(function(evt)
+    local taskname, solves, timestamp, description, num1, num2 = string.match(evt.Message, "([%w_]+) %- (%d+) solves %((%d+)%)\"([^\"]+)\" (%-?%d+) (%d+)")
+    
+    if taskname and solves and timestamp and description and num1 and num2 then
+        quests[taskname] = {taskname, solves, timestamp, description, num1, num2}
+    end
+end)
 
 hud.OnRender.Add(function()
+    local char = game.Character.Weenie
+    local numColumns = 2
     if imgui.Begin("FlagTracker") then
         if imgui.BeginTabBar("Flag Tracker Bar") then
             if imgui.BeginTabItem("Augmentations") then
-                if imgui.BeginTable("Augmentations", 2) then
+                if imgui.BeginTable("Augmentations", numColumns*2) then
+                    imgui.TableSetupColumn("Aug 1",im.ImGuiTableColumnFlags.WidthStretch,200)
+                    imgui.TableSetupColumn("Aug 1 Points",im.ImGuiTableColumnFlags.WidthStretch,35)
+                    imgui.TableSetupColumn("Aug 2",im.ImGuiTableColumnFlags.WidthStretch,200)
+                    imgui.TableSetupColumn("Aug 2 Points",im.ImGuiTableColumnFlags.WidthStretch,35)
                     local lastCategory = nil
+                    local currentColumnIndex = 0
                     for _, v in ipairs(augmentations) do
                         local currentCategory = v[1]
                         if currentCategory ~= lastCategory then
+                            if lastCategory ~= nil and augTreeRenderStatus[lastCategory] then
+                                imgui.TreePop()
+                            end
                             imgui.TableNextRow()
                             imgui.TableSetColumnIndex(0)
-                            -- Set the initial open state
-                            imgui.SeparatorText(currentCategory)
+                            imgui.Separator()
+                            imgui.SetNextItemOpen(augTreeInitialOpenStatus[currentCategory] == nil or augTreeInitialOpenStatus[currentCategory])
+                            augTreeRenderStatus[currentCategory] = imgui.TreeNode(currentCategory)
+                            imgui.TableSetColumnIndex(1)
+                            imgui.Separator()
+                            imgui.TableSetColumnIndex(2)
+                            imgui.Separator()
+                            imgui.TableSetColumnIndex(3)
+                            imgui.Separator()
+                            augTreeInitialOpenStatus[currentCategory] = augTreeRenderStatus[currentCategory]
                             lastCategory = currentCategory
+                            currentColumnIndex = 0
                         end
-                        local value = char.Value(v[3]) or 0
-                        local prefix = v[2]
-                        local cap = v[4]
-                        local color = coloryellow
-                        if value == cap then
-                            color = colorgreen
-                        elseif value < cap then
-                            color = colorred
+                        if augTreeRenderStatus[currentCategory] then
+                            local value = char.Value(v[3]) or 0
+                            local prefix = v[2]
+                            local cap = v[4]
+                            local color = coloryellow
+                            if value >= cap then
+                                color = colorgreen
+                            elseif value < cap then
+                                color = colorred
+                            end
+                            if currentColumnIndex == 0 then
+                                imgui.TableNextRow()
+                            end
+                            imgui.TableSetColumnIndex(currentColumnIndex)
+                            imgui.TextColored(color, prefix)
+                            currentColumnIndex = (currentColumnIndex + 1) % (numColumns*2)
+                            imgui.TableSetColumnIndex(currentColumnIndex)
+                            imgui.TextColored(color, value .. "/" .. cap)
+                            currentColumnIndex = (currentColumnIndex + 1) % (numColumns*2)
                         end
-                        imgui.TableNextRow()
-                        imgui.TableSetColumnIndex(0)
-                        imgui.TextColored(color, prefix)
-                        imgui.TableSetColumnIndex(1)
-                        imgui.TextColored(color, value .. "/" .. cap)
+                    end
+                    if lastCategory ~= nil and augTreeRenderStatus[lastCategory] then
+                        imgui.TreePop()
                     end
                     imgui.EndTable()
                 end
@@ -116,13 +162,15 @@ hud.OnRender.Add(function()
 
             if imgui.BeginTabItem("Luminance Auras") then
                 if imgui.BeginTable("Luminance Auras", 2) then
+                    imgui.TableSetupColumn("Lum Aura",im.ImGuiTableColumnFlags.WidthStretch,200)
+                    imgui.TableSetupColumn("Lum Aura Points",im.ImGuiTableColumnFlags.WidthStretch,25)
                     for _, v in ipairs(luminanceauras) do
                         local value = char.Value(v[2]) or 0
                         local prefix = v[1]
                         local cap = v[3]
                         local color = coloryellow
 
-                        if value == cap then
+                        if value >= cap then
                             color = colorgreen
                         elseif value < cap then
                             color = colorred
@@ -139,12 +187,37 @@ hud.OnRender.Add(function()
                 imgui.EndTabItem()
             end
 
-            if imgui.BeginTabItem("Quest Flags") then
+            if imgui.BeginTabItem("Quests") then
+                if imgui.BeginTable("Quests", 5) then
+                    imgui.TableSetupColumn("Quest",im.ImGuiTableColumnFlags.WidthStretch,128)
+                    imgui.TableSetupColumn("Solves",im.ImGuiTableColumnFlags.WidthStretch,16)
+                    imgui.TableSetupColumn("Description",im.ImGuiTableColumnFlags.WidthStretch,128)
+                    imgui.TableSetupColumn("Num1",im.ImGuiTableColumnFlags.WidthStretch,16)
+                    imgui.TableSetupColumn("Num2",im.ImGuiTableColumnFlags.WidthStretch,16)
+                    for v in pairs(quests) do
+                        local quest = quests[v]
+                        if quest ~= nil then 
+                            imgui.TableNextRow()
+                            imgui.TableSetColumnIndex(0)
+                            imgui.TextColored(colorgreen, quest[1])
+                            imgui.TableSetColumnIndex(1)
+                            imgui.TextColored(colorgreen, quest[2])
+                            imgui.TableSetColumnIndex(2)
+                            imgui.TextColored(colorgreen, quest[4])
+                            imgui.TableSetColumnIndex(3)
+                            imgui.TextColored(colorgreen, quest[5])
+                            imgui.TableSetColumnIndex(4)
+                            imgui.TextColored(colorgreen, quest[6])
+                        end
+                    end
+                    imgui.EndTable()
+                end
                 imgui.EndTabItem()
             end
             imgui.EndTabBar()
         end
         imgui.End()
     end
-    imgui.ShowDemoWindow()
 end)
+
+game.Actions.InvokeChat("/myquests")
