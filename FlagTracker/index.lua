@@ -2,7 +2,7 @@ local im = require("imgui")
 local ubviews = require("utilitybelt.views")
 --local bit = require("bit32")
 local imgui = im.ImGui
-local version = "1.0.1"
+local version = "1.0.2"
 local quests = {}
 
 local augmentations = {
@@ -60,20 +60,26 @@ local luminanceauras = {
     {"+1 Heal Rating",IntId.LumAugHealingRating,5},
     {"+1 Equipment Mana Rating",IntId.LumAugItemManaUsage,5},
     {"+1 Mana Stone Rating",IntId.LumAugItemManaGain,5},
+    {"+1 Crafting Skills",IntId.LumAugSkilledCraft,5},
     {"+1 All Skills",IntId.LumAugAllSkills,10},
     {"+2 Specialized Skills",IntId.LumAugSkilledSpec,5}
     --{"+1 Aetheria Effect Rating",IntId.LumAugSurgeEffectRating,5},
     --{"+1 Vitality",IntId.LumAugVitality,5},
 }
-local trackedquests = {
-    "lumaugskillquest",
-    "blankaugluminancetimer_0511",
-    "augmentationblankgemacquired",
-    "OswaldManualCompleted",
-    "arantahkill1",
-    "golemstonediemosgiven",
-    "pickedupmarkerboss10x",
-    "OracleLuminanceRewardsAccess_1110"
+local typeQuest = 0
+local typeIntValue = 1
+local typeAetheria = 2
+local characterflags = {
+    {"Additional Skill Credits",typeQuest,"+1 Skill Lum Aura","lumaugskillquest",2,2},
+    {"Additional Skill Credits",typeQuest,"+1 Skill Aun Ralirea","arantahkill1",1,2},
+    {"Additional Skill Credits",typeQuest,"+1 Skill Chasing Oswald","oswaldmanualcompleted",1,2},
+    {"Aetheria",typeAetheria,"Blue Aetheria (75)",IntId.AetheriaBitfield,1},
+    {"Aetheria",typeAetheria,"Yellow Aetheria (150)",IntId.AetheriaBitfield,2},
+    {"Aetheria",typeAetheria,"Red Aetheria (225)",IntId.AetheriaBitfield,4},
+    {"Augmentation Gems",typeQuest,"Sir Bellas","blankaugluminancetimer_0511",1,5},
+    {"Augmentation Gems",typeQuest,"Diemos","pickedupmarkerboss10x",1,5},
+    {"Augmentation Gems",typeQuest,"100K Luminance","augmentationblankgemacquired",1,5}
+    --"OracleLuminanceRewardsAccess_1110"
 }
 local coloryellow = Vector4.new(1,1,0,1)
 local colorred = Vector4.new(1,0,0,1)
@@ -88,10 +94,11 @@ local augTreeRenderStatus = {}
 local augTreeInitialOpenStatus = {}
 augTreeInitialOpenStatus["Stat Augs"] = false
 augTreeInitialOpenStatus["Resistance Augs"] = false
+local flagTreeRenderStatus = {}
+local flagTreeInitialOpenStatus = {}
 
 game.World.OnChatText.Add(function(evt)
     local taskname, solves, timestamp, description, num1, num2 = string.match(evt.Message, "([%w_]+) %- (%d+) solves %((%d+)%)\"([^\"]+)\" (%-?%d+) (%d+)")
-    
     if taskname and solves and timestamp and description and num1 and num2 then
         quests[taskname] = {taskname, solves, timestamp, description, num1, num2}
     end
@@ -101,6 +108,7 @@ hud.OnRender.Add(function()
     local char = game.Character.Weenie
     local numColumns = 2
     if imgui.BeginTabBar("Flag Tracker Bar") then
+        -- Augmentations Tab
         if imgui.BeginTabItem("Augmentations") then
             if imgui.BeginTable("Augmentations", numColumns*2) then
                 imgui.TableSetupColumn("Aug 1",im.ImGuiTableColumnFlags.WidthStretch,200)
@@ -137,7 +145,7 @@ hud.OnRender.Add(function()
                         local color = coloryellow
                         if value >= cap then
                             color = colorgreen
-                        elseif value < cap then
+                        elseif value == 0 then
                             color = colorred
                         end
                         if currentColumnIndex == 0 then
@@ -159,10 +167,11 @@ hud.OnRender.Add(function()
             imgui.EndTabItem()
         end
 
+        -- Luminance Auras Tab
         if imgui.BeginTabItem("Luminance Auras") then
             if imgui.BeginTable("Luminance Auras", 2) then
                 imgui.TableSetupColumn("Lum Aura",im.ImGuiTableColumnFlags.WidthStretch,200)
-                imgui.TableSetupColumn("Lum Aura Points",im.ImGuiTableColumnFlags.WidthStretch,25)
+                imgui.TableSetupColumn("Lum Aura Points",im.ImGuiTableColumnFlags.WidthStretch,35)
                 for _, v in ipairs(luminanceauras) do
                     local value = char.Value(v[2]) or 0
                     local prefix = v[1]
@@ -171,7 +180,7 @@ hud.OnRender.Add(function()
 
                     if value >= cap then
                         color = colorgreen
-                    elseif value < cap then
+                    elseif value == 0 then
                         color = colorred
                     end
 
@@ -186,6 +195,76 @@ hud.OnRender.Add(function()
             imgui.EndTabItem()
         end
 
+        -- Character Flags Tab
+        if imgui.BeginTabItem("Character Flags") then
+            if imgui.BeginTable("Character Flags", 2) then
+                imgui.TableSetupColumn("Flag 1",im.ImGuiTableColumnFlags.WidthStretch,200)
+                imgui.TableSetupColumn("Flag 1 Points",im.ImGuiTableColumnFlags.WidthStretch,35)
+                local lastCategory = nil
+                for _, v in ipairs(characterflags) do
+                    local currentCategory = v[1]
+                    if currentCategory ~= lastCategory then
+                        if lastCategory ~= nil and flagTreeRenderStatus[lastCategory] then
+                            imgui.TreePop()
+                        end
+                        imgui.TableNextRow()
+                        imgui.TableSetColumnIndex(0)
+                        imgui.Separator()
+                        imgui.SetNextItemOpen(true)
+                        imgui.SetNextItemOpen(flagTreeInitialOpenStatus[currentCategory] == nil or flagTreeInitialOpenStatus[currentCategory])
+                        flagTreeRenderStatus[currentCategory] = imgui.TreeNode(currentCategory)
+                        imgui.TableSetColumnIndex(1)
+                        imgui.Separator()
+                        flagTreeInitialOpenStatus[currentCategory] = flagTreeRenderStatus[currentCategory]
+                        lastCategory = currentCategory
+                    end
+                    if flagTreeRenderStatus[currentCategory] then
+                        local type = v[2]
+                        local prefix
+                        local value
+                        local cap
+                        if type == typeQuest then
+                            prefix = v[3]
+                            cap = v[5]
+                            local queststamp = v[4]
+                            local questfield = v[6]
+                            local questinfo = quests[queststamp]
+                            value = tonumber(0)
+                            if questinfo ~= nil then
+                                value = tonumber(questinfo[questfield])
+                            end
+                            if value == -1 then value = 0 end
+                        elseif type == typeAetheria then
+                            prefix = v[3]
+                            local bitreq = v[5]
+                            local bit = char.Value(v[4]) or 0
+                            if bit >= bitreq then
+                                value = 1
+                            end 
+                            cap = 1
+                        end
+                        local color = coloryellow
+                        if value >= cap then
+                            color = colorgreen
+                        elseif value == 0 then
+                            color = colorred
+                        end
+                        imgui.TableNextRow()
+                        imgui.TableSetColumnIndex(0)
+                        imgui.TextColored(color, prefix)
+                        imgui.TableSetColumnIndex(1)
+                        imgui.TextColored(color, value .. "/" .. cap)
+                    end
+                end
+                if lastCategory ~= nil and flagTreeRenderStatus[lastCategory] then
+                    imgui.TreePop()
+                end
+                imgui.EndTable()
+            end
+            imgui.EndTabItem()
+        end
+
+        -- General Quests Tab
         if imgui.BeginTabItem("Quests") then
             if imgui.BeginTable("Quests", 5) then
                 imgui.TableSetupColumn("Quest",im.ImGuiTableColumnFlags.WidthStretch,128)
