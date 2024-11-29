@@ -2,7 +2,7 @@ local im = require("imgui")
 local ubviews = require("utilitybelt.views")
 --local bit = require("bit32")
 local imgui = im.ImGui
-local version = "1.0.0"
+local version = "1.0.1"
 local quests = {}
 
 local augmentations = {
