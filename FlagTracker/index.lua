@@ -240,26 +240,23 @@ hud.OnRender.Add(function()
                         imgui.TableNextRow()
                         imgui.TableSetColumnIndex(0)
                         imgui.Separator()
-                        imgui.SetNextItemOpen(true)
                         imgui.SetNextItemOpen(flagTreeInitialOpenStatus[currentCategory] == nil or flagTreeInitialOpenStatus[currentCategory])
                         flagTreeRenderStatus[currentCategory] = imgui.TreeNode(currentCategory)
                         imgui.TableSetColumnIndex(1)
                         imgui.Separator()
                         flagTreeInitialOpenStatus[currentCategory] = flagTreeRenderStatus[currentCategory]
-                        lastCategory = currentCategory
                     end
                     if flagTreeRenderStatus[currentCategory] then
                         local type = v[2]
                         local prefix
-                        local value
                         local cap
+                        local value = 0
                         if type == typeQuest then
                             prefix = v[3]
                             cap = v[5]
                             local queststamp = v[4]
                             local questfield = v[6]
                             local questinfo = quests[queststamp]
-                            value = tonumber(0)
                             if questinfo ~= nil then
                                 if questfield == 3 then
                                     local expiration = questinfo[questfield] + questinfo[6]
@@ -270,7 +267,6 @@ hud.OnRender.Add(function()
                                     value = tonumber(questinfo[questfield])
                                 end
                             end
-                            --if value == -1 then value = 0 end
                         elseif type == typeAetheria then
                             prefix = v[3]
                             local bitreq = v[5]
@@ -292,6 +288,7 @@ hud.OnRender.Add(function()
                         imgui.TableSetColumnIndex(1)
                         imgui.TextColored(color, value .. "/" .. cap)
                     end
+                    lastCategory = currentCategory
                 end
                 if lastCategory ~= nil and flagTreeRenderStatus[lastCategory] then
                     imgui.TreePop()
