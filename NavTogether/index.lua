@@ -18,11 +18,17 @@ function CheckDistance()
     for i in pairs(fellowship) do
         ---@type FellowshipMember
         local member = fellowship[i]
-        local distance = game.Character.Weenie.DistanceTo2D(game.World.Get(member.Id))
-        if (distance > maxDistance) then
-            if debug then print("Character out of range: "..member.Name.." distance = "..tostring(distance)) end
-            allInRange = false  -- Set to false if any member is out of range
-            break
+        local memberWO = game.World.Get(member.Id)
+        if memberWO == nil then
+            if debug then print("nil fellow member: "..member.Id) end
+        else
+            if debug then print("checking distance to: "..memberWO.Name) end
+            local distance = game.Character.Weenie.DistanceTo2D(memberWO)
+            if (distance > maxDistance) then
+                if debug then print("Character out of range: "..member.Name.." distance = "..tostring(distance)) end
+                allInRange = false  -- Set to false if any member is out of range
+                break
+            end
         end
     end
 
