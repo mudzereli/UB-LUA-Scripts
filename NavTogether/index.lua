@@ -21,6 +21,8 @@ function CheckDistance()
         local memberWO = game.World.Get(member.Id)
         if memberWO == nil then
             if debug then print("nil fellow member: "..member.Id) end
+            allInRange = false  -- Set to false if any member is out of range
+            break
         else
             if debug then print("checking distance to: "..memberWO.Name) end
             local distance = game.Character.Weenie.DistanceTo2D(memberWO)
