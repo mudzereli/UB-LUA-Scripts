@@ -9,6 +9,10 @@ local questSteps = {}
 local hud = ubviews.Huds.CreateHud("QuestHelper v" .. version)
 hud.ShowInBar = true
 
+hud.OnShow.Add(function ()
+    imgui.SetWindowSize(inputQuestTextSize)
+end)
+
 hud.OnRender.Add(function()
     if imgui.BeginTabBar("QuestHelper Tab Bar") then
         if imgui.BeginTabItem("Quest Steps") then
