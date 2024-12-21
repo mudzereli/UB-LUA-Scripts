@@ -4,16 +4,17 @@ local imgui = im.ImGui
 local version = "1.0.0"
 local inputQuestText = "paste quest text here"
 local inputQuestTextSize = Vector2.new(350, 350)
+local initSize = false
 local questSteps = {}
 
 local hud = ubviews.Huds.CreateHud("QuestHelper v" .. version)
 hud.ShowInBar = true
 
-hud.OnShow.Add(function ()
-    imgui.SetWindowSize(inputQuestTextSize)
-end)
-
 hud.OnRender.Add(function()
+    if not initSize then
+        imgui.SetWindowSize(inputQuestTextSize)
+        initSize = true
+    end
     if imgui.BeginTabBar("QuestHelper Tab Bar") then
         if imgui.BeginTabItem("Quest Steps") then
             local i = 1
