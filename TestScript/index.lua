@@ -319,10 +319,6 @@ hud.OnRender.Add(function ()
             end
 
             if imgui.Button("Add Ivory to Rings") then
-                for i = #game.ActionQueue.Queue, 1, -1 do
-                    print("Removing Action: "..game.ActionQueue[i])
-                    game.ActionQueue.Remove(game.ActionQueue[i])
-                end
                 StartCoroutine(function()
                     local applyingIvoryToRings = true
                     while applyingIvoryToRings do
