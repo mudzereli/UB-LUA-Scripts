@@ -57,7 +57,7 @@ function Wait(ms)
     end
 end
 
-
+--[[
 game.World.OnTick.Add(function() 
     if doDropItems then
         for index, value in pairs(dropItems) do
@@ -68,6 +68,7 @@ game.World.OnTick.Add(function()
         end
     end
 end)
+]]--
 
 function TryApplyIvoryToRings()
     local RingToUse = nil
@@ -111,7 +112,7 @@ end
 function LootColosseumVault()
     -- Exit Combat Mode
     if game.Character.CombatMode ~= CombatMode.NonCombat then
-        print("Exiting Combat Mode")
+        print("Vault: Exiting Combat Mode")
         await(game.Actions.SetCombatMode(CombatMode.NonCombat))
         lootingColosseumVault = false
         return
@@ -122,12 +123,12 @@ function LootColosseumVault()
     if vault == nil or vault.DistanceTo2D(game.Character.Weenie) > 5 then
         lootingColosseumVault = false
         lootColosseumVault = false
-        print("Colosseum Vault Not Found or Too Far Away")
+        print("Vault: Not Found or Too Far Away")
         return
     end
 
     -- Check Lock Status
-    print("Appraising Colosseum Vault")
+    print("Vault: Appraising")
     await(game.Actions.ObjectAppraise(vault.Id))
     sleep(250)
     local locked = vault.BoolValues[BoolId.Locked]
@@ -147,13 +148,13 @@ function LootColosseumVault()
     if open then
         openstring = "open"
     end
-    print("Colosseum Vault Locked: "..lockedstring)
-    print("Colosseum Vault Open: "..openstring)
+    print("Vault: Lock Status = "..lockedstring)
+    print("Vault: Open Status = "..openstring)
 
     local key = game.Character.GetFirstInventory("Colosseum Vault Key")
     -- If it's Locked + Not Open + No Key then We're Done
     if locked and not open and key == nil then
-        print("Locked + Closed + No Key")
+        print("Vault: Locked + Closed + No Key")
         lootColosseumVault = false
         lootingColosseumVault = false
         return
@@ -169,15 +170,16 @@ function LootColosseumVault()
             end
         end
         if ring ~= nil then
-            print("Looting "..ring.Name)
-            await(game.Actions.ObjectUse(ring.Id,0))
-            Wait(750)
+            print("Vault: Looting "..ring.Name)
+            game.Actions.ObjectUse(ring.Id,0)
+            sleep(750)
             lootingColosseumVault = false
             return
         else
-            print("Closing "..vault.Name)
+            print("Vault: Closing")
+            --game.Actions.ObjectUse(vault.Id,0)
             await(game.Actions.InvokeChat("/ub mexec actiontryuseitem[wobjectgetopencontainer[]]"))
-            Wait(250)
+            sleep(250)
             lootingColosseumVault = false
             return
         end
@@ -185,21 +187,23 @@ function LootColosseumVault()
 
     -- If it's Locked but we have a Key, lets Unlock it
     if locked and key ~= nil then
-        print("Unlocking "..vault.Name)
+        print("Vault: Unlocking")
         await(game.Actions.ObjectUse(key.Id,vault.Id))
-        Wait(250)
         lootingColosseumVault = false
         return
     end
 
     -- If it's Unlocked but Closed, let's Open it
     if not locked and not open then
-        print("Opening "..vault.Name)
+        print("Vault: Opening")
         await(game.Actions.ObjectUse(vault.Id,0))
-        Wait(250)
+        sleep(250)
         lootingColosseumVault = false
         return
     end
+
+    lootingColosseumVault = false
+    return
 end
 
 function MakePyrealNuggets()
@@ -306,17 +310,23 @@ hud.OnRender.Add(function ()
 
         -- Colo Helper Tab
         if imgui.BeginTabItem("Colo Helper") then
+            if imgui.Button("Create Colo Key") then
+                game.Actions.InvokeChat("/ci 34448")
+            end
 
             if imgui.Button("Loot Colosseum Vault") then
-                StartCoroutine(function()
+                game.World.OnTick.Once(function()
                     lootColosseumVault = true
                     game.Actions.InvokeChat("/vt stop")
                     while lootColosseumVault do
                         if not lootingColosseumVault then
                             lootingColosseumVault = true
                             LootColosseumVault()
+                            print("----------------------------------")
+                        else
+                            print("Vault: already looting")
                         end
-                        Wait(750) -- Custom Wait
+                        sleep(150)
                     end
                     game.Actions.InvokeChat("/vt start")
                 end)
@@ -334,12 +344,12 @@ hud.OnRender.Add(function ()
             end
 
             if imgui.Button("Turn in Colo Rings") then
-                StartCoroutine(function()
+                game.World.OnTick.Once(function()
                     turningInColoRings = true
                     while turningInColoRings do
                         game.Actions.InvokeChat("/vt stop")
                         TurnInColoRings()
-                        Wait(1000) -- Custom Wait
+                        sleep(1000)
                     end
                     game.Actions.InvokeChat("/vt start")
                 end)
