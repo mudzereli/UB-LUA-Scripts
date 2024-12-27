@@ -323,12 +323,12 @@ hud.OnRender.Add(function ()
             end
 
             if imgui.Button("Add Ivory to Rings") then
-                StartCoroutine(function()
+                game.World.OnTick.Once(function()
                     game.ActionQueue.Dispose()
                     local applyingIvoryToRings = true
                     while applyingIvoryToRings do
                         applyingIvoryToRings = TryApplyIvoryToRings()
-                        Wait(750)
+                        sleep(750)
                     end
                 end)
             end
