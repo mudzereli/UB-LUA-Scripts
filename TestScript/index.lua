@@ -96,11 +96,15 @@ function TryApplyIvoryToRings()
                 break
         end
     end
-    if IvoryToUse == nil or RingToUse == nil then
+    if IvoryToUse == nil then
+        print("Ivory: No Ivory Bags")
+        return false
+    end
+    if RingToUse == nil then
+        print("Ivory: No Empyrean Rings")
         return false
     end
     await(game.Actions.ObjectUse(IvoryToUse.Id, RingToUse.Id))
-    sleep(750)
     return true
 end
 
@@ -167,13 +171,13 @@ function LootColosseumVault()
         if ring ~= nil then
             print("Looting "..ring.Name)
             await(game.Actions.ObjectUse(ring.Id,0))
-            sleep(750)
+            Wait(750)
             lootingColosseumVault = false
             return
         else
             print("Closing "..vault.Name)
             await(game.Actions.InvokeChat("/ub mexec actiontryuseitem[wobjectgetopencontainer[]]"))
-            sleep(250)
+            Wait(250)
             lootingColosseumVault = false
             return
         end
@@ -183,7 +187,7 @@ function LootColosseumVault()
     if locked and key ~= nil then
         print("Unlocking "..vault.Name)
         await(game.Actions.ObjectUse(key.Id,vault.Id))
-        sleep(250)
+        Wait(250)
         lootingColosseumVault = false
         return
     end
@@ -192,7 +196,7 @@ function LootColosseumVault()
     if not locked and not open then
         print("Opening "..vault.Name)
         await(game.Actions.ObjectUse(vault.Id,0))
-        sleep(250)
+        Wait(250)
         lootingColosseumVault = false
         return
     end
@@ -320,9 +324,11 @@ hud.OnRender.Add(function ()
 
             if imgui.Button("Add Ivory to Rings") then
                 StartCoroutine(function()
+                    game.ActionQueue.Dispose()
                     local applyingIvoryToRings = true
                     while applyingIvoryToRings do
                         applyingIvoryToRings = TryApplyIvoryToRings()
+                        Wait(750)
                     end
                 end)
             end
@@ -359,6 +365,21 @@ hud.OnRender.Add(function ()
         if imgui.BeginTabItem("Viridian Rise") then
             if imgui.Button("VR Use Portal") then
                 game.Actions.InvokeChat("/ub bc /ub uselp Viridian Portal")
+            end
+
+            if imgui.Button("Essence Looter") then
+                StartCoroutine(function()
+                    game.Actions.InvokeChat("/ub bc /vto lootonlyrarecorpses true")
+                    Wait(250)
+                    game.Actions.InvokeChat("/ub bc /vto lootfellowcorpses true")
+                    Wait(250)
+                    game.Actions.InvokeChat("/vto lootonlyrarecorpses false")
+                end)
+            end
+
+            if imgui.Button("Return After Death") then
+                game.Actions.InvokeChat("/vt opt set enablenav true")
+                game.Actions.InvokeChat("/vtn deru")
             end
 
             if imgui.Button("VR Setmotion Left") then
