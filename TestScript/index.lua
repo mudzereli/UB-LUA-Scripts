@@ -251,32 +251,32 @@ function TurnInColoRings()
 end
 
 function SlideAway()
-    local slidetime = 500
-    StartCoroutine(function()
-        game.Actions.InvokeChat("/ub bc /vtns")
+    local slidetime = 1200
+    game.World.OnTick.Once(function()
+        --game.Actions.InvokeChat("/ub bc /vtns")
         game.Actions.InvokeChat("/ub bc /vt opt set enablecombat false")
         game.Actions.InvokeChat("/ub bc /ub mexec clearmotion[]")
         game.Actions.InvokeChat("/ub bc /ub mexec setmotion[Backward,1]")
         game.Actions.InvokeChat("/ub bc /ub mexec setmotion[StrafeLeft,1]")
-        Wait(slidetime) -- Custom Wait
+        sleep(slidetime) -- Custom Wait
         game.Actions.InvokeChat("/ub bc /ub mexec clearmotion[]")
         game.Actions.InvokeChat("/ub bc /ub mexec setmotion[Backward,1]")
         game.Actions.InvokeChat("/ub bc /ub mexec setmotion[StrafeLeft,0]")
         game.Actions.InvokeChat("/ub bc /ub mexec setmotion[StrafeRight,1]")
-        Wait(slidetime) -- Custom Wait
+        sleep(slidetime) -- Custom Wait
         game.Actions.InvokeChat("/ub bc /ub mexec clearmotion[]")
         game.Actions.InvokeChat("/ub bc /ub mexec setmotion[Backward,1]")
         game.Actions.InvokeChat("/ub bc /ub mexec setmotion[StrafeLeft,1]")
         game.Actions.InvokeChat("/ub bc /ub mexec setmotion[StrafeRight,0]")
-        Wait(slidetime) -- Custom Wait
+        sleep(slidetime) -- Custom Wait
         game.Actions.InvokeChat("/ub bc /ub mexec clearmotion[]")
         game.Actions.InvokeChat("/ub bc /ub mexec setmotion[Backward,1]")
         game.Actions.InvokeChat("/ub bc /ub mexec setmotion[StrafeLeft,0]")
         game.Actions.InvokeChat("/ub bc /ub mexec setmotion[StrafeRight,1]")
-        Wait(slidetime) -- Custom Wait
+        sleep(slidetime) -- Custom Wait
         game.Actions.InvokeChat("/ub bc /ub mexec clearmotion[]")
         game.Actions.InvokeChat("/ub bc /vt opt set enablecombat true")
-        game.Actions.InvokeChat("/ub bc /ub follow Porkchop")
+        --game.Actions.InvokeChat("/ub bc /ub follow Porkchop")
     end)
 end
 
@@ -402,6 +402,7 @@ hud.OnRender.Add(function ()
                 game.Actions.InvokeChat("/vtn deru")
             end
 
+            --[[
             if imgui.Button("VR Setmotion Left") then
                 SlideDirection(0)
             end
@@ -409,7 +410,7 @@ hud.OnRender.Add(function ()
             if imgui.Button("VR Setmotion Right") then
                 SlideDirection(1)
             end
-
+            ]]--
 
             if imgui.Button("VR Setmotion") then
                 SlideAway()
