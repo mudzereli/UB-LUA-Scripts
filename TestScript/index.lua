@@ -114,6 +114,7 @@ function LootColosseumVault()
     if game.Character.CombatMode ~= CombatMode.NonCombat then
         print("Vault: Exiting Combat Mode")
         await(game.Actions.SetCombatMode(CombatMode.NonCombat))
+        sleep(750)
         lootingColosseumVault = false
         return
     end
@@ -130,7 +131,7 @@ function LootColosseumVault()
     -- Check Lock Status
     print("Vault: Appraising")
     await(game.Actions.ObjectAppraise(vault.Id))
-    sleep(250)
+    sleep(100)
     local locked = vault.BoolValues[BoolId.Locked]
 
     -- Check If Opened
@@ -189,6 +190,7 @@ function LootColosseumVault()
     if locked and key ~= nil then
         print("Vault: Unlocking")
         await(game.Actions.ObjectUse(key.Id,vault.Id))
+        sleep(250)
         lootingColosseumVault = false
         return
     end
@@ -310,6 +312,15 @@ hud.OnRender.Add(function ()
 
         -- Colo Helper Tab
         if imgui.BeginTabItem("Colo Helper") then
+
+            if imgui.Button("Print + Clear Queue") then
+                for _, value in ipairs(game.ActionQueue.Queue) do
+                    print(value.Name..": "..value.CurrentRetryCount)
+                    game.ActionQueue.Remove(value)
+                end
+                print("Actions Printed and Cleared")
+            end
+
             if imgui.Button("Create Colo Key") then
                 game.Actions.InvokeChat("/ci 34448")
             end
@@ -326,7 +337,7 @@ hud.OnRender.Add(function ()
                         else
                             print("Vault: already looting")
                         end
-                        sleep(150)
+                        sleep(100)
                     end
                     game.Actions.InvokeChat("/vt start")
                 end)
@@ -334,7 +345,6 @@ hud.OnRender.Add(function ()
 
             if imgui.Button("Add Ivory to Rings") then
                 game.World.OnTick.Once(function()
-                    game.ActionQueue.Dispose()
                     local applyingIvoryToRings = true
                     while applyingIvoryToRings do
                         applyingIvoryToRings = TryApplyIvoryToRings()
