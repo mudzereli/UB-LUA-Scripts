@@ -4,11 +4,12 @@ local acc = require("acclient")
 local imgui = im.ImGui
 local version = "1.0.0"
 
+local gambling_max_tokens = 100
 local dropItems = {}
 dropItems["Golden Gromnie"] = 0
 dropItems["Chocolate Gromnie"] = 0
 dropItems["Candy Corn"] = 0
-dropItems["Licorice Rat"] = 0
+dropItems["Licorice Rat"] = 30
 dropItems["Ivory Gromnie Wings"] = 0
 dropItems["Pack Scarecrow"] = 0
 dropItems["Black Luster Pearl"] = 0
@@ -17,58 +18,16 @@ dropItems["Greater Mana Kit"] = 5
 dropItems["Greater Stamina Kit"] = 5
 dropItems["Massive Mana Charge"] = 10
 dropItems["Mana Forge Key"] = 0
-local doDropItems = false
+dropItems["Sleech"] = 0
+dropItems["Skeleton"] = 0
+dropItems["Auroch"] = 0
+dropItems["Lugian"] = 0
+dropItems["Moar"] = 0
+dropItems["The Orphanage"] = 0
 local lootingColosseumVault = false
 local lootColosseumVault = false
 local turningInColoRings = false
 local hudPosition = nil
-
--- Coroutine Manager
-local coroutineQueue = {}
-
-function StartCoroutine(func)
-    local co = coroutine.create(func)
-    table.insert(coroutineQueue, co)
-end
-
-function UpdateCoroutines()
-    local i = 1
-    while i <= #coroutineQueue do
-        local co = coroutineQueue[i]
-        if coroutine.status(co) == "dead" then
-            table.remove(coroutineQueue, i)
-        else
-            local success, err = coroutine.resume(co)
-            if not success then
-                print("Coroutine Error: " .. err)
-                table.remove(coroutineQueue, i)
-            else
-                i = i + 1
-            end
-        end
-    end
-end
-
--- Custom Wait Function
-function Wait(ms)
-    local targetTime = os.clock() + (ms / 1000)
-    while os.clock() < targetTime do
-        coroutine.yield()
-    end
-end
-
---[[
-game.World.OnTick.Add(function() 
-    if doDropItems then
-        for index, value in pairs(dropItems) do
-            --print("Checking Item: "..index)
-            if game.Character.GetInventoryCount(index) > tonumber(value) then
-                game.ActionQueue.Add(game.Actions.ObjectDrop(game.Character.GetFirstInventory(index).Id))
-            end
-        end
-    end
-end)
-]]--
 
 function TryApplyIvoryToRings()
     local RingToUse = nil
@@ -288,7 +247,7 @@ function SlideDirection(dir)
     else
         slidecommand = "/ub bc /ub mexec setmotion[StrafeRight,1]"
     end
-    StartCoroutine(function()
+    game.World.OnTick.Once(function()
         game.Actions.InvokeChat("/ub bc /vtns")
         game.Actions.InvokeChat("/ub bc /vt opt set enablecombat false")
         game.Actions.InvokeChat("/ub bc /ub mexec setmotion[Backward,1]")
@@ -306,8 +265,6 @@ hud.WindowSettings = im.ImGuiWindowFlags.AlwaysAutoResize
 
 -- Main HUD Render
 hud.OnRender.Add(function ()
-    UpdateCoroutines() -- Resume coroutines each frame
-
     if imgui.BeginTabBar("Main Tab") then
 
         -- Colo Helper Tab
@@ -365,13 +322,17 @@ hud.OnRender.Add(function ()
                 end)
             end
 
+            if imgui.Button("Dump All Excess Salvage") then
+                game.Actions.InvokeChat("/ub bc /ub givep Ivory Salvage to Garbage Barrel")
+            end
+
             if imgui.Button("Make Pyreal Nuggets") then
-                StartCoroutine(function()
+                game.World.OnTick.Once(function()
                     local makeNuggets = true
                     while makeNuggets do
                         game.Actions.InvokeChat("/vt stop")
                         MakePyrealNuggets()
-                        Wait(250) -- Custom Wait
+                        sleep(250) -- Custom Wait
                         makeNuggets = game.Character.GetInventoryCount("Wrapped Pyreal Sliver") > 0 or game.Character.GetInventoryCount("Pyreal Sliver") > 0
                     end
                     game.Actions.InvokeChat("/vt start")
@@ -388,11 +349,11 @@ hud.OnRender.Add(function ()
             end
 
             if imgui.Button("Essence Looter") then
-                StartCoroutine(function()
+                game.World.OnTick.Once(function()
                     game.Actions.InvokeChat("/ub bc /vto lootonlyrarecorpses true")
-                    Wait(250)
+                    sleep(250)
                     game.Actions.InvokeChat("/ub bc /vto lootfellowcorpses true")
-                    Wait(250)
+                    sleep(250)
                     game.Actions.InvokeChat("/vto lootonlyrarecorpses false")
                 end)
             end
@@ -400,6 +361,18 @@ hud.OnRender.Add(function ()
             if imgui.Button("Return After Death") then
                 game.Actions.InvokeChat("/vt opt set enablenav true")
                 game.Actions.InvokeChat("/vtn deru")
+            end
+
+            if imgui.Button("Talk Marker") then
+                game.Actions.InvokeChat("/ub bc /ub uselp Marker")
+            end
+
+            if imgui.Button("Count Essences") then
+                game.Actions.InvokeChat("/ub bc /ub mexec $mcount=getitemcountininventorybyname[`Viridian Essence`]&&chatbox[`/f Viridian Essence Count: `+$mcount]")
+            end
+
+            if imgui.Button("Level 5 Bridge") then
+                game.Actions.InvokeChat("/vt nav load VRBridge")
             end
 
             --[[
@@ -419,8 +392,47 @@ hud.OnRender.Add(function ()
             imgui.EndTabItem()
         end
 
+        if imgui.BeginTabItem("Gambling") then
+            if imgui.Button("Buy High Stakes Tokens") then
+                game.World.OnTick.Once(function()
+                    local trade_note = game.Character.GetFirstInventory("Trade Note (250,000)")
+                    local dealer = game.World.GetNearest("Arshid al-Qiyid",DistanceType.T2D)
+                    if trade_note ~= nil and dealer ~= nil then
+                        await(game.Actions.InvokeChat("/ub prepclick yes 10"))
+                        await(game.Actions.ObjectGive(trade_note.Id,dealer.Id))
+                    end
+                end)
+            end
+            if imgui.Button("Gamble High Stakes") then
+                game.World.OnTick.Once(function()
+                    for _, value in ipairs(game.ActionQueue.Queue) do
+                        game.ActionQueue.Remove(value)
+                    end
+                    local token = game.Character.GetFirstInventory("High-Stakes Gambling Token")
+                    local gamemaster = game.World.GetNearest("Gharu'ndim High-Stakes Gamesmaster",DistanceType.T2D)
+                    while token ~= nil and gamemaster ~= nil do
+                        for _, value in ipairs(game.ActionQueue.Queue) do
+                            game.ActionQueue.Remove(value)
+                        end
+                        token = game.Character.GetFirstInventory("High-Stakes Gambling Token")
+                        game.Actions.ObjectGive(token.Id,gamemaster.Id)
+                        sleep(300)
+                    end
+                end)
+            end
+            if imgui.Button("Drop Unwanted Items") then
+                for index, value in pairs(dropItems) do
+                    --print("Checking Item: "..index)
+                    if game.Character.GetInventoryCount(index) > tonumber(value) then
+                        game.ActionQueue.Add(game.Actions.ObjectDrop(game.Character.GetFirstInventory(index).Id))
+                    end
+                end
+            end
+            imgui.EndTabItem()
+        end
         imgui.EndTabBar()
     end
+
     if hudPosition == nil then
         imgui.SetWindowPos(Vector2.new(500,100))
         hudPosition = imgui.GetWindowPos()
