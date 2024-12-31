@@ -29,7 +29,7 @@
 ### FlagTracker
 - This LUA script is designed to view important one-time character flags such as Augmentations, Luminance Auras, and certain Quest Flags.
 - Load the script and then open the UI from the Script Hud Bar.
-![flagtracker_ui1](https://i.ibb.co/FXvCtgk/image-2024-12-31-080049052.png)
+![flagtracker_ui1](https://i.ibb.co/Nr3ryW2/image-2024-12-31-080246218.png)
 ![flagtracker_ui2](https://i.ibb.co/nQ1Rdp8/image-2024-12-31-075938005.png)
 
 ### QuestHelper
