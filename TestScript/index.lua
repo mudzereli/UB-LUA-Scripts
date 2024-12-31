@@ -344,49 +344,74 @@ hud.OnRender.Add(function ()
 
         -- Viridian Rise Tab
         if imgui.BeginTabItem("Viridian Rise") then
-            if imgui.Button("VR Use Portal") then
-                game.Actions.InvokeChat("/ub bc /ub uselp Viridian Portal")
-            end
+            if imgui.BeginTable("Viridian Rise Table",2) then
+                imgui.TableSetupColumn("Viridian Rise Buttons 1")
+                imgui.TableSetupColumn("Viridian Rise Buttons 2")
+                
+                imgui.TableNextRow()
+                imgui.TableSetColumnIndex(0)
+                if imgui.Button("VR Use Portal") then
+                    game.Actions.InvokeChat("/ub bc /ub uselp Viridian Portal")
+                end
+                imgui.Separator()
 
-            if imgui.Button("Essence Looter") then
-                game.World.OnTick.Once(function()
-                    game.Actions.InvokeChat("/ub bc /vto lootonlyrarecorpses true")
-                    sleep(250)
-                    game.Actions.InvokeChat("/ub bc /vto lootfellowcorpses true")
-                    sleep(250)
-                    game.Actions.InvokeChat("/vto lootonlyrarecorpses false")
-                end)
-            end
+                imgui.TableSetColumnIndex(1)
+                if imgui.Button("Return After Death") then
+                    game.Actions.InvokeChat("/vt opt set enablenav true")
+                    game.Actions.InvokeChat("/vtn deru")
+                end
+                imgui.Separator()
 
-            if imgui.Button("Return After Death") then
-                game.Actions.InvokeChat("/vt opt set enablenav true")
-                game.Actions.InvokeChat("/vtn deru")
-            end
+                imgui.TableNextRow()
+                imgui.TableSetColumnIndex(0)
+                if imgui.Button("Talk Marker") then
+                    game.Actions.InvokeChat("/ub bc /ub uselp Marker")
+                end
+                imgui.Separator()
 
-            if imgui.Button("Talk Marker") then
-                game.Actions.InvokeChat("/ub bc /ub uselp Marker")
-            end
+                imgui.TableSetColumnIndex(1)
+                if imgui.Button("Level 5 Bridge") then
+                    game.Actions.InvokeChat("/vt nav load VRBridge")
+                end
+                imgui.Separator()
 
-            if imgui.Button("Count Essences") then
-                game.Actions.InvokeChat("/ub bc /ub mexec $mcount=getitemcountininventorybyname[`Viridian Essence`]&&chatbox[`/f Viridian Essence Count: `+$mcount]")
-            end
+                imgui.TableNextRow()
+                imgui.TableSetColumnIndex(0)
+                if imgui.Button("Essence Looter") then
+                    game.World.OnTick.Once(function()
+                        game.Actions.InvokeChat("/ub bc /vto lootonlyrarecorpses true")
+                        sleep(250)
+                        game.Actions.InvokeChat("/ub bc /vto lootfellowcorpses true")
+                        sleep(250)
+                        game.Actions.InvokeChat("/vto lootonlyrarecorpses false")
+                    end)
+                end
+                imgui.Separator()
+                
+                imgui.TableSetColumnIndex(1)
+                if imgui.Button("Count Essences") then
+                    game.Actions.InvokeChat("/ub bc /ub mexec $mcount=getitemcountininventorybyname[`Viridian Essence`]&&chatbox[`/f Viridian Essence Count: `+$mcount]")
+                end
+                imgui.Separator()
 
-            if imgui.Button("Level 5 Bridge") then
-                game.Actions.InvokeChat("/vt nav load VRBridge")
-            end
+                imgui.TableNextRow()
+                imgui.TableSetColumnIndex(0)
+                if imgui.Button("VR Setmotion Left") then
+                    SlideDirection(0)
+                end
 
-            --[[
-            if imgui.Button("VR Setmotion Left") then
-                SlideDirection(0)
-            end
+                imgui.TableSetColumnIndex(1)
+                if imgui.Button("VR Setmotion Right") then
+                    SlideDirection(1)
+                end
 
-            if imgui.Button("VR Setmotion Right") then
-                SlideDirection(1)
-            end
-            ]]--
+                imgui.TableNextRow()
+                imgui.TableSetColumnIndex(0)
+                if imgui.Button("VR Setmotion") then
+                    SlideAway()
+                end
 
-            if imgui.Button("VR Setmotion") then
-                SlideAway()
+                imgui.EndTable()
             end
 
             imgui.EndTabItem()
