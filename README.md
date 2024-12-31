@@ -29,6 +29,8 @@
 ### FlagTracker
 - This LUA script is designed to view important one-time character flags such as Augmentations, Luminance Auras, and certain Quest Flags.
 - Load the script and then open the UI from the Script Hud Bar.
+![flagtracker_ui1](https://i.ibb.co/WD4Vw3n/image-2024-12-31-075647365.png)
+![flagtracker_ui2](https://i.ibb.co/nQ1Rdp8/image-2024-12-31-075938005.png)
 
 ### QuestHelper
 - This LUA script is to help you complete quests by converting a pasted list of steps (from ACPedia or ACFandom) to a checkable list.
