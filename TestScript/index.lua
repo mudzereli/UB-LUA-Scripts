@@ -252,7 +252,7 @@ function SlideDirection(dir)
         game.Actions.InvokeChat("/ub bc /vt opt set enablecombat false")
         game.Actions.InvokeChat("/ub bc /ub mexec setmotion[Backward,1]")
         game.Actions.InvokeChat(slidecommand)
-        Wait(slidetime) -- Custom Wait
+        sleep(slidetime) -- Custom Wait
         game.Actions.InvokeChat("/ub bc /ub mexec clearmotion[]")
         game.Actions.InvokeChat("/ub bc /vt opt set enablecombat true")
         game.Actions.InvokeChat("/ub bc /ub follow Porkchop")
@@ -397,18 +397,24 @@ hud.OnRender.Add(function ()
                 imgui.TableNextRow()
                 imgui.TableSetColumnIndex(0)
                 if imgui.Button("VR Setmotion Left") then
-                    SlideDirection(0)
+                    game.World.OnTick.Once(function()
+                        SlideDirection(0)
+                    end)
                 end
 
                 imgui.TableSetColumnIndex(1)
                 if imgui.Button("VR Setmotion Right") then
-                    SlideDirection(1)
+                    game.World.OnTick.Once(function()
+                        SlideDirection(1)
+                    end)
                 end
 
                 imgui.TableNextRow()
                 imgui.TableSetColumnIndex(0)
                 if imgui.Button("VR Setmotion") then
-                    SlideAway()
+                    game.World.OnTick.Once(function()
+                        SlideAway()
+                    end)
                 end
 
                 imgui.EndTable()
