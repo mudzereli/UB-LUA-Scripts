@@ -4,6 +4,8 @@ local ubviews = require("utilitybelt.views")
 local imgui = im.ImGui
 local version = "1.0.2"
 local quests = {}
+local currentHUDPosition = nil
+local defaultHUDposition = Vector2.new(500,100)
 
 local augmentations = {
     {"Death Augs","Keep Items",IntId.AugmentationLessDeathItemLoss,3},
@@ -331,6 +333,13 @@ hud.OnRender.Add(function()
         end
         imgui.EndTabBar()
     end
+
+    if currentHUDPosition == nil then
+        imgui.SetWindowPos(defaultHUDposition)
+        currentHUDPosition = imgui.GetWindowPos()
+    end
 end)
+
+hud.Visible = true
 
 game.Actions.InvokeChat("/myquests")
