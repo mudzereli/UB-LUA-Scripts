@@ -17,6 +17,13 @@ hud.OnRender.Add(function()
     end
     if imgui.BeginTabBar("QuestHelper Tab Bar") then
         if imgui.BeginTabItem("Quest Steps") then
+            
+            if questSteps[1] ~= nil then
+                if imgui.Button("Say Current Step") then
+                    game.Actions.InvokeChat(questSteps[1][1])
+                end
+            end
+            
             local i = 1
             while i <= #questSteps do
                 local step = questSteps[i][1]
