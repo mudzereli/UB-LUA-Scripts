@@ -296,6 +296,11 @@ hud.OnRender.Add(function ()
                         end
                         sleep(100)
                     end
+                    local applyingIvoryToRings = true
+                    while applyingIvoryToRings do
+                        applyingIvoryToRings = TryApplyIvoryToRings()
+                        sleep(750)
+                    end
                     game.Actions.InvokeChat("/vt start")
                 end)
             end
@@ -371,7 +376,7 @@ hud.OnRender.Add(function ()
 
                 imgui.TableSetColumnIndex(1)
                 if imgui.Button("Level 5 Bridge") then
-                    game.Actions.InvokeChat("/vt nav load VRBridge")
+                    game.Actions.InvokeChat("/vt nav load navs\vr-bridge-jump")
                 end
                 imgui.Separator()
 
