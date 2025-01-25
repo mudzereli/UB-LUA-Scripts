@@ -2,7 +2,7 @@ local im = require("imgui")
 local ubviews = require("utilitybelt.views")
 --local bit = require("bit32")
 local imgui = im.ImGui
-local version = "1.0.2"
+local version = "1.1.0"
 local quests = {}
 local currentHUDPosition = nil
 local defaultHUDposition = Vector2.new(500,100)
@@ -26,6 +26,7 @@ local augmentations = {
     {"Burden / Pack Augs","Infused Creature Magic",IntId.AugmentationInfusedCreatureMagic,1,"Gustuv Lansdown","Cragstone"},
     {"Burden / Pack Augs","Infused Life Magic",IntId.AugmentationInfusedLifeMagic,1,"Akemi Fei","Hebian-To"},
     {"Burden / Pack Augs","Infused Item Magic",IntId.AugmentationInfusedItemMagic,1,"Gan Fo","Hebian-To"},
+    {"Misc Augs","10%% Increase Health",nil,1,"Donatello Linante","Silyun"},
     {"Misc Augs","Increased Spell Duration",IntId.AugmentationIncreasedSpellDuration,5,"Nawamara Ujio","Mayoi"},
     -- To Do: Add Asheron's Lesser Benediction
     {"Misc Augs","Faster HP Regen",IntId.AugmentationFasterRegen,2,"Alison Dulane","Bandit Castle"},
@@ -153,7 +154,14 @@ hud.OnRender.Add(function()
                         currentColumnIndex = 0
                     end
                     if augTreeRenderStatus[currentCategory] then
-                        local value = char.Value(v[3]) or 0
+                        local augID = v[3]
+                        local value = 0
+                        if augID == nil then
+                            value = game.Character.GetInventoryCount("Asheron's Lesser Benediction")
+                        else
+                            value = char.Value(augID) or 0
+                        end
+
                         local prefix = v[2]
                         local cap = v[4]
                         local npc = v[5]
