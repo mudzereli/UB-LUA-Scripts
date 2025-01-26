@@ -26,7 +26,7 @@ local augmentations = {
     {"Burden / Pack Augs","Infused Creature Magic",IntId.AugmentationInfusedCreatureMagic,1,"Gustuv Lansdown","Cragstone"},
     {"Burden / Pack Augs","Infused Life Magic",IntId.AugmentationInfusedLifeMagic,1,"Akemi Fei","Hebian-To"},
     {"Burden / Pack Augs","Infused Item Magic",IntId.AugmentationInfusedItemMagic,1,"Gan Fo","Hebian-To"},
-    {"Misc Augs","10%% Increase Health",nil,1,"Donatello Linante","Silyun"},
+    {"Misc Augs","10%% Health Increase",nil,1,"Donatello Linante","Silyun"},
     {"Misc Augs","Increased Spell Duration",IntId.AugmentationIncreasedSpellDuration,5,"Nawamara Ujio","Mayoi"},
     -- To Do: Add Asheron's Lesser Benediction
     {"Misc Augs","Faster HP Regen",IntId.AugmentationFasterRegen,2,"Alison Dulane","Bandit Castle"},
@@ -365,4 +365,4 @@ end)
 
 hud.Visible = true
 
-game.Actions.InvokeChat("/myquests")
+game.Actions.InvokeChat("/ub myquests")
