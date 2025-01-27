@@ -33,7 +33,7 @@ hud.OnRender.Add(function()
                 local numCompletedSteps = #questStepsCompleted
                 if numCompletedSteps > 0 then
                     imgui.TableNextColumn()
-                    if imgui.Button("Undo") then
+                    if imgui.Button("Undo Last Check") then
                         if numCompletedSteps > 0 then
                             local step = questStepsCompleted[numCompletedSteps]
                             table.insert(questSteps,step[2],{step[1],false})
@@ -78,6 +78,7 @@ hud.OnRender.Add(function()
             if questTextChanged and type(questTextResult) == "string" then
                 inputQuestText = questTextResult
                 questSteps = {}
+                questStepsCompleted = {}
                 for s in inputQuestText:gmatch("[^\r\n]+") do
                     table.insert(questSteps, {s, false})
                 end
