@@ -289,13 +289,15 @@ hud.OnRender.Add(function()
                                         value = 1
                                     end
                                 else
-                                    value = tonumber(questinfo[questfield])
+                                    value = tonumber(questinfo[questfield]) or 0
                                 end
                             end
                         elseif type == typeAetheria then
                             prefix = v[3]
                             local bitreq = v[5]
-                            local bit = char.Value(v[4]) or 0
+                            --- @type IntId
+                            local bitfield = tonumber(v[4]) or 0
+                            local bit = char.Value(bitfield)
                             if bit >= bitreq then
                                 value = 1
                             end 
