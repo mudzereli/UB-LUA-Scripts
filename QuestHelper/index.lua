@@ -50,7 +50,7 @@ hud.OnRender.Add(function()
                 local check = questSteps[i][2]
 
                 -- Set up a wrapping region for the checkbox text
-                imgui.PushTextWrapPos(imgui.GetContentRegionAvail().x)
+                imgui.PushTextWrapPos(imgui.GetContentRegionAvail().X)
 
                 -- Begin a horizontal layout for checkbox and text
                 imgui.PushID(i)
