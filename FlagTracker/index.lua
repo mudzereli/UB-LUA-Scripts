@@ -2,7 +2,7 @@ local im = require("imgui")
 local ubviews = require("utilitybelt.views")
 --local bit = require("bit32")
 local imgui = im.ImGui
-local version = "1.1.0"
+local version = "1.2.0"
 local quests = {}
 local currentHUDPosition = nil
 local defaultHUDposition = Vector2.new(500,100)
@@ -76,8 +76,27 @@ local luminanceauras = {
     --{"+1 Aetheria Effect Rating",IntId.LumAugSurgeEffectRating,5},
     --{"+1 Vitality",IntId.LumAugVitality,5},
 }
+local recallspells = {
+    {"Recall the Sanctuary",2023},
+    {"Aerlinthe Recall",2041},
+    {"Mount Lethe Recall",2813},
+    {"Recall Aphus Lassel",2931},
+    {"Ulgrim's Recall",2941},
+    {"Recall to the Singularity Caul",2943},
+ --   {"Ulgrim's Recall",3856},
+    {"Glenden Wood Recall",3865},
+    {"Bur Recall",4084},
+    {"Call of the Mhoire Forge",4128},
+    {"Paradox-touched Olthoi Infested Area Recall",4198},
+    {"Colosseum Recall",4213},
+    {"Return to the Keep",4214},
+    {"Gear Knight Invasion Area Camp Recall",5330},
+    {"Lost City of Neftet Recall",5541},
+    {"Rynthid Recall",6150},
+    {"Viridian Rise Recall",6321},
+    {"Viridian Rise Great Tree Recall",6322}
+}
 local typeQuest = 0
-local typeIntValue = 1
 local typeAetheria = 2
 local characterflags = {
     {"Additional Skill Credits",typeQuest,"+1 Skill Lum Aura","lumaugskillquest",2,2},
@@ -89,7 +108,6 @@ local characterflags = {
     {"Augmentation Gems",typeQuest,"Sir Bellas","augmentationblankgemacquired",1,3},
     {"Augmentation Gems",typeQuest,"Gladiator Diemos Token","pickedupmarkerboss10x",1,3},
     {"Augmentation Gems",typeQuest,"100K Luminance Gem","blankaugluminancetimer_0511",1,3},
-    {"Other Flags",typeQuest,"Recall Aphus Lassel","recalltuskerisland",1,2},
     {"Other Flags",typeQuest,"Candeth Keep Treehouse","strongholdbuildercomplete",1,2},
     {"Other Flags",typeQuest,"Luminance Flag","oracleluminancerewardsaccess_1110",1,2},
     {"Other Flags",typeQuest,"Diemos Access","golemstonediemosgiven",1,2}
@@ -250,8 +268,34 @@ hud.OnRender.Add(function()
             imgui.EndTabItem()
         end
 
+        -- Recall Spells Tab
+        if imgui.BeginTabItem("Recalls") then
+            if imgui.BeginTable("Recall Spells",2) then
+                imgui.TableSetupColumn("RecallColumn1")
+                imgui.TableSetupColumn("RecallColumn2")
+                for _,v in ipairs(recallspells) do
+                    local spellName = v[1]
+                    local spellID = v[2]
+                    local spellKnown = game.Character.SpellBook.IsKnown(spellID)
+                    local color = colorred
+                    local status = "Unknown"
+                    if spellKnown then
+                        color = colorgreen
+                        status = "Known"
+                    end
+                    imgui.TableNextRow()
+                    imgui.TableNextColumn()
+                    imgui.TextColored(color,spellName)
+                    imgui.TableNextColumn()
+                    imgui.TextColored(color,status)
+                end
+                imgui.EndTable()
+            end
+            imgui.EndTabItem()
+        end
+
         -- Character Flags Tab
-        if imgui.BeginTabItem("Character Flags") then
+        if imgui.BeginTabItem("Flags") then
             if imgui.BeginTable("Character Flags", 2) then
                 imgui.TableSetupColumn("Flag 1",im.ImGuiTableColumnFlags.WidthStretch,200)
                 imgui.TableSetupColumn("Flag 1 Points",im.ImGuiTableColumnFlags.WidthStretch,35)
@@ -289,16 +333,20 @@ hud.OnRender.Add(function()
                                         value = 1
                                     end
                                 else
-                                    value = tonumber(questinfo[questfield]) or 0
+                                    local questinfofield = tonumber(questinfo[questfield])
+                                    if questinfofield == nil then
+                                        questinfofield = 0
+                                    end
+                                    value = questinfofield
                                 end
                             end
                         elseif type == typeAetheria then
                             prefix = v[3]
                             local bitreq = v[5]
-                            --- @type IntId
-                            local bitfield = tonumber(v[4]) or 0
-                            local bit = char.Value(bitfield)
-                            if bit >= bitreq then
+                            local bitfield = v[4]
+                            ---@diagnostic disable-next-line
+                            local bitvalue = char.Value(bitfield)
+                            if bitvalue >= bitreq then
                                 value = 1
                             end 
                             cap = 1
@@ -325,6 +373,7 @@ hud.OnRender.Add(function()
             imgui.EndTabItem()
         end
 
+        --[[
         -- General Quests Tab
         if imgui.BeginTabItem("Quests") then
             if imgui.BeginTable("Quests", 6) then
@@ -356,6 +405,7 @@ hud.OnRender.Add(function()
             end
             imgui.EndTabItem()
         end
+        ]]--
         imgui.EndTabBar()
     end
 
