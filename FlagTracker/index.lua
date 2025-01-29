@@ -2,7 +2,7 @@ local im = require("imgui")
 local ubviews = require("utilitybelt.views")
 --local bit = require("bit32")
 local imgui = im.ImGui
-local version = "1.2.0"
+local version = "1.2.1"
 local quests = {}
 local currentHUDPosition = nil
 local defaultHUDposition = Vector2.new(500,100)
@@ -109,6 +109,7 @@ local characterflags = {
     {"Augmentation Gems",typeQuest,"Gladiator Diemos Token","pickedupmarkerboss10x",1,3},
     {"Augmentation Gems",typeQuest,"100K Luminance Gem","blankaugluminancetimer_0511",1,3},
     {"Other Flags",typeQuest,"Candeth Keep Treehouse","strongholdbuildercomplete",1,2},
+    {"Other Flags",typeQuest,"Bur Flag (Portal)","burflagged(permanent)",1,2},
     {"Other Flags",typeQuest,"Luminance Flag","oracleluminancerewardsaccess_1110",1,2},
     {"Other Flags",typeQuest,"Diemos Access","golemstonediemosgiven",1,2}
     --"OracleLuminanceRewardsAccess_1110"
@@ -130,7 +131,7 @@ local flagTreeRenderStatus = {}
 local flagTreeInitialOpenStatus = {}
 
 game.World.OnChatText.Add(function(evt)
-    local taskname, solves, timestamp, description, num1, num2 = string.match(evt.Message, "([%w_]+) %- (%d+) solves %((%d+)%)\"([^\"]+)\" (%-?%d+) (%d+)")
+    local taskname, solves, timestamp, description, num1, num2 = string.match(evt.Message, "([%w%s%(%)-]+) %- (%d+) solves %((%d+)%)\"([^\"]+)\" (%-?%d+) (%d+)")
     if taskname and solves and timestamp and description and num1 and num2 then
         quests[taskname] = {taskname, solves, timestamp, description, num1, num2}
     end
