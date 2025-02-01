@@ -2,7 +2,7 @@ local im = require("imgui")
 local ubviews = require("utilitybelt.views")
 --local bit = require("bit32")
 local imgui = im.ImGui
-local version = "1.2.2"
+local version = "1.2.3"
 local quests = {}
 local currentHUDPosition = nil
 local defaultHUDposition = Vector2.new(500,100)
@@ -74,26 +74,26 @@ local augTreeOpenStates = {
     ["Stat Augs"] = false,
     ["Resistance Augs"] = false
 }
-local typeLuminanceAuraNalicana = 0
-local typeLuminanceAuraSeer = 1
 local luminanceauras = {
-    {"+1 Aetheria Proc Rating",IntId.LumAugSurgeChanceRating,5,typeLuminanceAuraNalicana},
-    {"+1 Damage Reduction Rating",IntId.LumAugDamageReductionRating,5,typeLuminanceAuraNalicana},
-    {"+1 Crit Reduction Rating",IntId.LumAugCritReductionRating,5,typeLuminanceAuraNalicana},
-    {"+1 Damage Rating",IntId.LumAugDamageRating,5,typeLuminanceAuraNalicana},
-    {"+1 Crit Damage Rating",IntId.LumAugCritDamageRating,5,typeLuminanceAuraNalicana},
-    {"+1 Heal Rating",IntId.LumAugHealingRating,5,typeLuminanceAuraNalicana},
-    {"+1 Equipment Mana Rating",IntId.LumAugItemManaUsage,5,typeLuminanceAuraNalicana},
-    {"+1 Mana Stone Rating",IntId.LumAugItemManaGain,5,typeLuminanceAuraNalicana},
-    {"+1 Crafting Skills",IntId.LumAugSkilledCraft,5,typeLuminanceAuraNalicana},
-    {"+1 All Skills",IntId.LumAugAllSkills,10,typeLuminanceAuraNalicana},
-    {"+2 Specialized Skills",IntId.LumAugSkilledSpec,5,typeLuminanceAuraSeer},
-    {"+1 Damage Reduction Rating",IntId.LumAugDamageReductionRating,5,typeLuminanceAuraSeer},
-    {"+1 Damage Rating",IntId.LumAugDamageRating,5,typeLuminanceAuraSeer},
-    {"+1 Crit Damage Rating",IntId.LumAugCritDamageRating,5,typeLuminanceAuraSeer},
-    {"+1 Crit Reduction Rating",IntId.LumAugCritReductionRating,5,typeLuminanceAuraSeer}
-    --{"+1 Aetheria Effect Rating",IntId.LumAugSurgeEffectRating,5},
-    --{"+1 Vitality",IntId.LumAugVitality,5},
+    ["Nalicana Auras"] = {
+        {"+1 Aetheria Proc Rating",IntId.LumAugSurgeChanceRating,5},
+        {"+1 Damage Reduction Rating",IntId.LumAugDamageReductionRating,5},
+        {"+1 Crit Reduction Rating",IntId.LumAugCritReductionRating,5},
+        {"+1 Damage Rating",IntId.LumAugDamageRating,5},
+        {"+1 Crit Damage Rating",IntId.LumAugCritDamageRating,5},
+        {"+1 Heal Rating",IntId.LumAugHealingRating,5},
+        {"+1 Equipment Mana Rating",IntId.LumAugItemManaUsage,5},
+        {"+1 Mana Stone Rating",IntId.LumAugItemManaGain,5},
+        {"+1 Crafting Skills",IntId.LumAugSkilledCraft,5},
+        {"+1 All Skills",IntId.LumAugAllSkills,10},
+    },
+    ["Seer Auras"] = {
+        {"+2 Specialized Skills",IntId.LumAugSkilledSpec,5},
+        {"+1 Damage Reduction Rating",IntId.LumAugDamageReductionRating,5},
+        {"+1 Damage Rating",IntId.LumAugDamageRating,5},
+        {"+1 Crit Damage Rating",IntId.LumAugCritDamageRating,5},
+        {"+1 Crit Reduction Rating",IntId.LumAugCritReductionRating,5}
+    }
 }
 local recallspells = {
     {"Recall the Sanctuary",2023},
@@ -228,50 +228,42 @@ hud.OnRender.Add(function()
             imgui.EndTabItem()
         end
 
-
         -- Luminance Auras Tab
         if imgui.BeginTabItem("Luminance Auras") then
-            if imgui.BeginTable("Luminance Auras", 2) then
-                imgui.TableSetupColumn("Lum Aura",im.ImGuiTableColumnFlags.WidthStretch,200)
-                imgui.TableSetupColumn("Lum Aura Points",im.ImGuiTableColumnFlags.WidthStretch,35)
-                imgui.TableNextRow()
-                imgui.TableSetColumnIndex(0)
-                imgui.SeparatorText("Nalicana Auras")
-                local lastLuminanceAuraType = typeLuminanceAuraNalicana
-                for _, v in ipairs(luminanceauras) do
-                    local value = char.Value(v[2]) or 0
-                    local prefix = v[1]
-                    local cap = v[3]
-                    local luminanceAuraType = v[4]
-                    local color = coloryellow
-
-                    if luminanceAuraType ~= lastLuminanceAuraType then
-                        imgui.TableNextRow()
-                        imgui.TableSetColumnIndex(0)
-                        imgui.SeparatorText("Seer Auras")
-                    end
-
-                    if value >= cap and luminanceAuraType == typeLuminanceAuraNalicana then
-                        value = cap
-                    elseif luminanceAuraType == typeLuminanceAuraSeer and v[2] ~= IntId.LumAugSkilledSpec then
-                        value = math.max(0,value-5)
-                    end
-
-                    if value >= cap then
-                        color = colorgreen
-                    elseif value == 0 then
-                        color = colorred
-                    end
-
+            for category, auraList in pairs(luminanceauras) do
+                imgui.SeparatorText(category)
+                if imgui.BeginTable("Luminance Auras_"..category, 2) then
+                    imgui.TableSetupColumn("Lum Aura",im.ImGuiTableColumnFlags.WidthStretch,200)
+                    imgui.TableSetupColumn("Lum Aura Points",im.ImGuiTableColumnFlags.WidthStretch,35)
                     imgui.TableNextRow()
                     imgui.TableSetColumnIndex(0)
-                    imgui.TextColored(color, prefix)
-                    imgui.TableSetColumnIndex(1)
-                    imgui.TextColored(color, value .. "/" .. cap)
-
-                    lastLuminanceAuraType = luminanceAuraType
+                    for _, auraInfo in ipairs(auraList) do
+                        local value = char.Value(auraInfo[2]) or 0
+                        local prefix = auraInfo[1]
+                        local cap = auraInfo[3]
+                        local luminanceAuraType = auraInfo[4]
+                        local color = coloryellow
+    
+                        if value >= cap and category == "Nalicana Auras" then
+                            value = cap
+                        elseif category == "Seer Auras" and auraInfo[2] ~= IntId.LumAugSkilledSpec then
+                            value = math.max(0,value-5)
+                        end
+    
+                        if value >= cap then
+                            color = colorgreen
+                        elseif value == 0 then
+                            color = colorred
+                        end
+    
+                        imgui.TableNextRow()
+                        imgui.TableSetColumnIndex(0)
+                        imgui.TextColored(color, prefix)
+                        imgui.TableSetColumnIndex(1)
+                        imgui.TextColored(color, value .. "/" .. cap)
+                    end
+                    imgui.EndTable()
                 end
-                imgui.EndTable()
             end
             imgui.EndTabItem()
         end
