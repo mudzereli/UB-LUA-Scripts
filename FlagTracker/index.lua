@@ -2,7 +2,7 @@ local im = require("imgui")
 local ubviews = require("utilitybelt.views")
 --local bit = require("bit32")
 local imgui = im.ImGui
-local version = "1.2.5"
+local version = "1.2.6"
 local quests = {}
 local currentHUDPosition = nil
 local defaultHUDposition = Vector2.new(500,100)
@@ -147,7 +147,7 @@ local flagTreeInitialOpenStatus = {}
 game.World.OnChatText.Add(function(evt)
     local taskname, solves, timestamp, description, num1, num2 = string.match(evt.Message, "([%w%s%(%)-]+) %- (%d+) solves %((%d+)%)\"([^\"]+)\" (%-?%d+) (%d+)")
     if taskname and solves and timestamp and description and num1 and num2 then
-        quests[taskname] = {taskname, solves, timestamp, description, num1, num2}
+        table.insert(quests, {taskname,solves,timestamp,description,num1,num2})
     end
 end)
 
@@ -373,37 +373,70 @@ hud.OnRender.Add(function()
 
         -- General Quests Tab
         if imgui.BeginTabItem("Quests") then
-            if imgui.BeginTable("Quests", 6, im.ImGuiTableFlags.ScrollY) then
-                imgui.TableSetupColumn("Quest",im.ImGuiTableColumnFlags.WidthFixed,256)
-                imgui.TableSetupColumn("#",im.ImGuiTableColumnFlags.WidthFixed,16)
-                imgui.TableSetupColumn("TimeStamp",im.ImGuiTableColumnFlags.WidthFixed,128)
-                imgui.TableSetupColumn("Description",im.ImGuiTableColumnFlags.WidthFixed,512)
-                imgui.TableSetupColumn("N1",im.ImGuiTableColumnFlags.WidthFixed,16)
-                imgui.TableSetupColumn("N2",im.ImGuiTableColumnFlags.WidthFixed,64)
-                imgui.TableSetupScrollFreeze(0,1)
+            if imgui.Button("Refresh Quests") then
+                quests = {}
+                game.Actions.InvokeChat("/myquests")
+            end
+            -- Quests Table
+            if imgui.BeginTable("Quests", 6, im.ImGuiTableFlags.ScrollY + im.ImGuiTableFlags.Sortable) then
+                imgui.TableSetupColumn("Quest", im.ImGuiTableColumnFlags.WidthFixed, 256)
+                imgui.TableSetupColumn("#", im.ImGuiTableColumnFlags.WidthFixed, 16)
+                imgui.TableSetupColumn("TimeStamp", im.ImGuiTableColumnFlags.WidthFixed, 128)
+                imgui.TableSetupColumn("Description", im.ImGuiTableColumnFlags.WidthFixed, 512)
+                imgui.TableSetupColumn("N1", im.ImGuiTableColumnFlags.WidthFixed, 32)
+                imgui.TableSetupColumn("N2", im.ImGuiTableColumnFlags.WidthFixed, 64)
+                imgui.TableSetupScrollFreeze(0, 1)
                 imgui.TableHeadersRow()
-                for v in pairs(quests) do
-                    local quest = quests[v]
-                    if quest ~= nil then 
-                        imgui.TableNextRow()
-                        imgui.TableSetColumnIndex(0)
-                        imgui.TextColored(colorgreen, quest[1])
-                        imgui.TableSetColumnIndex(1)
-                        imgui.TextColored(colorgreen, quest[2])
-                        imgui.TableSetColumnIndex(2)
-                        imgui.TextColored(colorgreen, tostring(os.date("%Y-%m-%d %H:%M:%S", quest[3])))
-                        imgui.TableSetColumnIndex(3)
-                        imgui.TextColored(colorgreen, quest[4])
-                        imgui.TableSetColumnIndex(4)
-                        imgui.TextColored(colorgreen, quest[5])
-                        imgui.TableSetColumnIndex(5)
-                        imgui.TextColored(colorgreen, quest[6])
-                    end
+        
+                -- Handle sorting
+                local sort_specs = imgui.TableGetSortSpecs()
+                if sort_specs and sort_specs.SpecsDirty then
+                    table.sort(quests,function(a,b) 
+                        local sortcol = sort_specs.Specs.ColumnIndex + 1
+                        local sortasc = sort_specs.Specs.SortDirection == im.ImGuiSortDirection.Ascending
+                        if a and b then
+                            local valA = a[sortcol]
+                            local valB = b[sortcol]
+                            if valA and valB then
+                                if tonumber(valA) and tonumber(valB) then
+                                    valA = tonumber(valA)
+                                    valB = tonumber(valB)
+                                end
+                                if sortasc then
+                                    return valA < valB
+                                else
+                                    return valB < valA
+                                end
+                            end
+                            return true
+                        end
+                        return true
+                    end)
+                    sort_specs.SpecsDirty = false -- Mark as sorted
                 end
+
+                -- Populate table
+                for _, quest in ipairs(quests) do
+                    imgui.TableNextRow()
+                    imgui.TableSetColumnIndex(0)
+                    imgui.TextColored(colorgreen, quest[1]) -- Quest Name
+                    imgui.TableSetColumnIndex(1)
+                    imgui.TextColored(colorgreen, quest[2]) -- Solves
+                    imgui.TableSetColumnIndex(2)
+                    imgui.TextColored(colorgreen, tostring(os.date("%Y-%m-%d %H:%M:%S", quest[3]))) -- Timestamp
+                    imgui.TableSetColumnIndex(3)
+                    imgui.TextColored(colorgreen, quest[4]) -- Description
+                    imgui.TableSetColumnIndex(4)
+                    imgui.TextColored(colorgreen, quest[5]) -- N1
+                    imgui.TableSetColumnIndex(5)
+                    imgui.TextColored(colorgreen, quest[6]) -- N2
+                end
+        
                 imgui.EndTable()
             end
             imgui.EndTabItem()
         end
+        
         imgui.EndTabBar()
     end
 
