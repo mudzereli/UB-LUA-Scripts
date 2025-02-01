@@ -2,7 +2,7 @@ local im = require("imgui")
 local ubviews = require("utilitybelt.views")
 --local bit = require("bit32")
 local imgui = im.ImGui
-local version = "1.2.4"
+local version = "1.2.5"
 local quests = {}
 local currentHUDPosition = nil
 local defaultHUDposition = Vector2.new(500,100)
@@ -240,7 +240,6 @@ hud.OnRender.Add(function()
                         local value = char.Value(auraInfo[2]) or 0
                         local prefix = auraInfo[1]
                         local cap = auraInfo[3]
-                        local luminanceAuraType = auraInfo[4]
                         local color = coloryellow
     
                         if value >= cap and category == "Nalicana Auras" then
@@ -372,16 +371,17 @@ hud.OnRender.Add(function()
             imgui.EndTabItem()
         end
 
-        --[[
         -- General Quests Tab
         if imgui.BeginTabItem("Quests") then
-            if imgui.BeginTable("Quests", 6) then
+            if imgui.BeginTable("Quests", 6, im.ImGuiTableFlags.ScrollY) then
                 imgui.TableSetupColumn("Quest",im.ImGuiTableColumnFlags.WidthFixed,256)
-                imgui.TableSetupColumn("Solves",im.ImGuiTableColumnFlags.WidthFixed,16)
+                imgui.TableSetupColumn("#",im.ImGuiTableColumnFlags.WidthFixed,16)
                 imgui.TableSetupColumn("TimeStamp",im.ImGuiTableColumnFlags.WidthFixed,128)
                 imgui.TableSetupColumn("Description",im.ImGuiTableColumnFlags.WidthFixed,512)
-                imgui.TableSetupColumn("Num1",im.ImGuiTableColumnFlags.WidthFixed,16)
-                imgui.TableSetupColumn("Num2",im.ImGuiTableColumnFlags.WidthFixed,64)
+                imgui.TableSetupColumn("N1",im.ImGuiTableColumnFlags.WidthFixed,16)
+                imgui.TableSetupColumn("N2",im.ImGuiTableColumnFlags.WidthFixed,64)
+                imgui.TableSetupScrollFreeze(0,1)
+                imgui.TableHeadersRow()
                 for v in pairs(quests) do
                     local quest = quests[v]
                     if quest ~= nil then 
@@ -404,7 +404,6 @@ hud.OnRender.Add(function()
             end
             imgui.EndTabItem()
         end
-        ]]--
         imgui.EndTabBar()
     end
 
