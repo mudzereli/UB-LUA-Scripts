@@ -2,7 +2,7 @@ local im = require("imgui")
 local ubviews = require("utilitybelt.views")
 --local bit = require("bit32")
 local imgui = im.ImGui
-local version = "1.2.3"
+local version = "1.2.4"
 local quests = {}
 local currentHUDPosition = nil
 local defaultHUDposition = Vector2.new(500,100)
@@ -131,7 +131,6 @@ local characterflags = {
     {"Other Flags",typeQuest,"Bur Flag (Portal)","burflagged(permanent)",1,2},
     {"Other Flags",typeQuest,"Luminance Flag","oracleluminancerewardsaccess_1110",1,2},
     {"Other Flags",typeQuest,"Diemos Access","golemstonediemosgiven",1,2}
-    --"OracleLuminanceRewardsAccess_1110"
 }
 local coloryellow = Vector4.new(1,1,0,1)
 local colorred = Vector4.new(1,0,0,1)
@@ -179,12 +178,12 @@ hud.OnRender.Add(function()
 
                         local currentColumnIndex = 0
 
-                        for _, v in ipairs(augList) do
-                            local prefix = v[1]
-                            local augID = v[2]
-                            local cap = v[3]
-                            local npc = v[4]
-                            local town = v[5]
+                        for _, augInfo in ipairs(augList) do
+                            local prefix = augInfo[1]
+                            local augID = augInfo[2]
+                            local cap = augInfo[3]
+                            local npc = augInfo[4]
+                            local town = augInfo[5]
                             local value = (augID == nil) and game.Character.GetInventoryCount("Asheron's Lesser Benediction") or (char.Value(augID) or 0)
 
                             local color = coloryellow
@@ -273,9 +272,9 @@ hud.OnRender.Add(function()
             if imgui.BeginTable("Recall Spells",2) then
                 imgui.TableSetupColumn("RecallColumn1")
                 imgui.TableSetupColumn("RecallColumn2")
-                for _,v in ipairs(recallspells) do
-                    local spellName = v[1]
-                    local spellID = v[2]
+                for _,recallInfo in ipairs(recallspells) do
+                    local spellName = recallInfo[1]
+                    local spellID = recallInfo[2]
                     local spellKnown = game.Character.SpellBook.IsKnown(spellID)
                     local color = colorred
                     local status = "Unknown"
@@ -300,8 +299,8 @@ hud.OnRender.Add(function()
                 imgui.TableSetupColumn("Flag 1",im.ImGuiTableColumnFlags.WidthStretch,200)
                 imgui.TableSetupColumn("Flag 1 Points",im.ImGuiTableColumnFlags.WidthStretch,35)
                 local lastCategory = nil
-                for _, v in ipairs(characterflags) do
-                    local currentCategory = v[1]
+                for _, flagInfo in ipairs(characterflags) do
+                    local currentCategory = flagInfo[1]
                     if currentCategory ~= lastCategory then
                         if lastCategory ~= nil and flagTreeRenderStatus[lastCategory] then
                             imgui.TreePop()
@@ -316,15 +315,15 @@ hud.OnRender.Add(function()
                         flagTreeInitialOpenStatus[currentCategory] = flagTreeRenderStatus[currentCategory]
                     end
                     if flagTreeRenderStatus[currentCategory] then
-                        local type = v[2]
+                        local type = flagInfo[2]
                         local prefix
                         local cap
                         local value = 0
                         if type == typeQuest then
-                            prefix = v[3]
-                            cap = v[5]
-                            local queststamp = v[4]
-                            local questfield = v[6]
+                            prefix = flagInfo[3]
+                            cap = flagInfo[5]
+                            local queststamp = flagInfo[4]
+                            local questfield = flagInfo[6]
                             local questinfo = quests[queststamp]
                             if questinfo ~= nil then
                                 if questfield == 3 then
@@ -341,9 +340,9 @@ hud.OnRender.Add(function()
                                 end
                             end
                         elseif type == typeAetheria then
-                            prefix = v[3]
-                            local bitreq = v[5]
-                            local bitfield = v[4]
+                            prefix = flagInfo[3]
+                            local bitreq = flagInfo[5]
+                            local bitfield = flagInfo[4]
                             ---@diagnostic disable-next-line
                             local bitvalue = char.Value(bitfield)
                             if bitvalue >= bitreq then
