@@ -2,58 +2,77 @@ local im = require("imgui")
 local ubviews = require("utilitybelt.views")
 --local bit = require("bit32")
 local imgui = im.ImGui
-local version = "1.2.1"
+local version = "1.2.2"
 local quests = {}
 local currentHUDPosition = nil
 local defaultHUDposition = Vector2.new(500,100)
 
 local augmentations = {
-    {"Death Augs","Keep Items",IntId.AugmentationLessDeathItemLoss,3,"Rohula bint Ludun","Ayan Baqur"},
-    {"Death Augs","Keep Spells",IntId.AugmentationSpellsRemainPastDeath,1,"Erik Festus","Ayan Baqur"},
-    {"Skill Augs","+5 All Skills",IntId.AugmentationJackOfAllTrades,1,"Arianna the Adept","Bandit Castle"},
-    {"Skill Augs","+10 Melee Skills",IntId.AugmentationSkilledMelee,1,"Carlito Gallo","Silyun"},
-    {"Skill Augs","+10 Magic Skills",IntId.AugmentationSkilledMagic,1,"Rahina bint Zalanis","Zaikhal"},
-    {"Skill Augs","+10 Missile Skills",IntId.AugmentationSkilledMissile,1,"Kilaf","Zaikhal"},
-    {"Rating Augs","25%% Crit Protection",IntId.AugmentationCriticalDefense,1,"Piersanti Linante","Sanamar"},
-    {"Rating Augs","1%% Critical Chance",IntId.AugmentationCriticalExpertise,1,"Anfram Mellow","Ayan Baqur"},
-    {"Rating Augs","3%% Critical Damage",IntId.AugmentationCriticalPower,1,"Alishia bint Aldan","Ayan Baqur"},
-    {"Rating Augs","3%% Damage Rating",IntId.AugmentationDamageBonus,1,"Neela Nashua","Bandit Castle"},
-    {"Rating Augs","3%% Damage Reduction",IntId.AugmentationDamageReduction,1,"Emily Yarow","Cragstone"},
-    {"Burden / Pack Augs","Extra Carrying Capacity",IntId.AugmentationIncreasedCarryingCapacity,5,"Husoon","Zaikhal"},
-    {"Burden / Pack Augs","Extra Pack Slot",IntId.AugmentationExtraPackSlot,1,"Dumida bint Ruminre","Zaikhal"},
-    {"Burden / Pack Augs","Infused War Magic",IntId.AugmentationInfusedWarMagic,1,"Raphel Detante","Silyun"},
-    {"Burden / Pack Augs","Infused Void Magic",IntId.AugmentationInfusedVoidMagic,1,"Morathe","Candeth Keep"},
-    {"Burden / Pack Augs","Infused Creature Magic",IntId.AugmentationInfusedCreatureMagic,1,"Gustuv Lansdown","Cragstone"},
-    {"Burden / Pack Augs","Infused Life Magic",IntId.AugmentationInfusedLifeMagic,1,"Akemi Fei","Hebian-To"},
-    {"Burden / Pack Augs","Infused Item Magic",IntId.AugmentationInfusedItemMagic,1,"Gan Fo","Hebian-To"},
-    {"Misc Augs","10%% Health Increase",nil,1,"Donatello Linante","Silyun"},
-    {"Misc Augs","Increased Spell Duration",IntId.AugmentationIncreasedSpellDuration,5,"Nawamara Ujio","Mayoi"},
-    -- To Do: Add Asheron's Lesser Benediction
-    {"Misc Augs","Faster HP Regen",IntId.AugmentationFasterRegen,2,"Alison Dulane","Bandit Castle"},
-    {"Misc Augs","5%% Experience Increase",IntId.AugmentationBonusXp,1,"Rickard Dumalia","Silyun"},
-    {"Salvage Augs","Specialized Weapon Tinkering",IntId.AugmentationSpecializeWeaponTinkering,1,"Lenor Turk","Cragstone"},
-    {"Salvage Augs","Specialized Armor Tinkering",IntId.AugmentationSpecializeArmorTinkering,1,"Joshun Felden","Cragstone"},
-    {"Salvage Augs","Specialized Item Tinkering",IntId.AugmentationSpecializeItemTinkering,1,"Brienne Carlus","Cragstone"},
-    {"Salvage Augs","Specialized Magic Item Tinkering",IntId.AugmentationSpecializeMagicItemTinkering,1,"Burrell Sammrun","Cragstone"},
-    {"Salvage Augs","Specialized GearCraft",IntId.AugmentationSpecializeGearcraft,1,"Alex Brummel","Cragstone"},
-    {"Salvage Augs","Specialized Salvaging",IntId.AugmentationSpecializeSalvaging,1,"Robert Crow","Cragstone"},
-    {"Salvage Augs","25%% More Salvage",IntId.AugmentationBonusSalvage,4,"Kris Cennis","Cragstone"},
-    {"Salvage Augs","5%% Imbue Chance",IntId.AugmentationBonusImbueChance,1,"Lug","Oolutanga's Refuge"},
-    {"Stat Augs","All Stats",IntId.AugmentationInnateFamily,10},
-    {"Stat Augs","Strength",IntId.AugmentationInnateStrength,10,"Fiun Luunere","Fiun Outpost"},
-    {"Stat Augs","Endurance",IntId.AugmentationInnateEndurance,10,"Fiun Ruun","Fiun Outpost"},
-    {"Stat Augs","Coordination",IntId.AugmentationInnateCoordination,10,"Fiun Bayaas","Fiun Outpost"},
-    {"Stat Augs","Quickness",IntId.AugmentationInnateQuickness,10,"Fiun Riish","Fiun Outpost"},
-    {"Stat Augs","Focus",IntId.AugmentationInnateFocus,10,"Fiun Vasherr","Fiun Outpost"},
-    {"Stat Augs","Self",IntId.AugmentationInnateSelf,10,"Fiun Noress","Fiun Outpost"},
-    {"Resistance Augs","All Resistances",IntId.AugmentationResistanceFamily,2},
-    {"Resistance Augs","Blunt",IntId.AugmentationResistanceBlunt,2,"Nawamara Dia","Hebian-To"},
-    {"Resistance Augs","Pierce",IntId.AugmentationResistancePierce,2,"Kyujo Rujen","Hebian-To"},
-    {"Resistance Augs","Slashing",IntId.AugmentationResistanceSlash,2,"Ilin Wis","Hebian-To"},
-    {"Resistance Augs","Fire",IntId.AugmentationResistanceFire,2,"Rikshen Ri","Hebian-To"},
-    {"Resistance Augs","Frost",IntId.AugmentationResistanceFrost,2,"Lu Bao","Hebian-To"},
-    {"Resistance Augs","Acid",IntId.AugmentationResistanceAcid,2,"Shujio Milao","Hebian-To"},
-    {"Resistance Augs","Lightning",IntId.AugmentationResistanceLightning,2,"Enli Yuo","Hebian-To"}
+    ["Death Augs"] = {
+        {"Keep Items",IntId.AugmentationLessDeathItemLoss,3,"Rohula bint Ludun","Ayan Baqur"},
+        {"Keep Spells",IntId.AugmentationSpellsRemainPastDeath,1,"Erik Festus","Ayan Baqur"}
+    },
+    ["Skill Augs"] = {
+        {"+5 All Skills",IntId.AugmentationJackOfAllTrades,1,"Arianna the Adept","Bandit Castle"},
+        {"+10 Melee Skills",IntId.AugmentationSkilledMelee,1,"Carlito Gallo","Silyun"},
+        {"+10 Magic Skills",IntId.AugmentationSkilledMagic,1,"Rahina bint Zalanis","Zaikhal"},
+        {"+10 Missile Skills",IntId.AugmentationSkilledMissile,1,"Kilaf","Zaikhal"}
+    },
+    ["Rating Augs"] = {
+        {"25%% Crit Protection",IntId.AugmentationCriticalDefense,1,"Piersanti Linante","Sanamar"},
+        {"1%% Critical Chance",IntId.AugmentationCriticalExpertise,1,"Anfram Mellow","Ayan Baqur"},
+        {"3%% Critical Damage",IntId.AugmentationCriticalPower,1,"Alishia bint Aldan","Ayan Baqur"},
+        {"3%% Damage Rating",IntId.AugmentationDamageBonus,1,"Neela Nashua","Bandit Castle"},
+        {"3%% Damage Reduction",IntId.AugmentationDamageReduction,1,"Emily Yarow","Cragstone"}
+    },
+    ["Burden / Pack Augs"] = {
+        {"Extra Carrying Capacity",IntId.AugmentationIncreasedCarryingCapacity,5,"Husoon","Zaikhal"},
+        {"Extra Pack Slot",IntId.AugmentationExtraPackSlot,1,"Dumida bint Ruminre","Zaikhal"},
+        {"Infused War Magic",IntId.AugmentationInfusedWarMagic,1,"Raphel Detante","Silyun"},
+        {"Infused Void Magic",IntId.AugmentationInfusedVoidMagic,1,"Morathe","Candeth Keep"},
+        {"Infused Creature Magic",IntId.AugmentationInfusedCreatureMagic,1,"Gustuv Lansdown","Cragstone"},
+        {"Infused Life Magic",IntId.AugmentationInfusedLifeMagic,1,"Akemi Fei","Hebian-To"},
+        {"Infused Item Magic",IntId.AugmentationInfusedItemMagic,1,"Gan Fo","Hebian-To"}
+    },
+    ["Misc Augs"] = {
+        {"10%% Health Increase",nil,1,"Donatello Linante","Silyun"},
+        {"Increased Spell Duration",IntId.AugmentationIncreasedSpellDuration,5,"Nawamara Ujio","Mayoi"},
+        {"Faster HP Regen",IntId.AugmentationFasterRegen,2,"Alison Dulane","Bandit Castle"},
+        {"5%% Experience Increase",IntId.AugmentationBonusXp,1,"Rickard Dumalia","Silyun"}
+    },
+    ["Salvage Augs"] = {
+        {"Specialized Weapon Tinkering",IntId.AugmentationSpecializeWeaponTinkering,1,"Lenor Turk","Cragstone"},
+        {"Specialized Armor Tinkering",IntId.AugmentationSpecializeArmorTinkering,1,"Joshun Felden","Cragstone"},
+        {"Specialized Item Tinkering",IntId.AugmentationSpecializeItemTinkering,1,"Brienne Carlus","Cragstone"},
+        {"Specialized Magic Item Tinkering",IntId.AugmentationSpecializeMagicItemTinkering,1,"Burrell Sammrun","Cragstone"},
+        {"Specialized GearCraft",IntId.AugmentationSpecializeGearcraft,1,"Alex Brummel","Cragstone"},
+        {"Specialized Salvaging",IntId.AugmentationSpecializeSalvaging,1,"Robert Crow","Cragstone"},
+        {"25%% More Salvage",IntId.AugmentationBonusSalvage,4,"Kris Cennis","Cragstone"},
+        {"5%% Imbue Chance",IntId.AugmentationBonusImbueChance,1,"Lug","Oolutanga's Refuge"}
+    },
+    ["Stat Augs"] = {
+        {"All Stats",IntId.AugmentationInnateFamily,10},
+        {"Strength",IntId.AugmentationInnateStrength,10,"Fiun Luunere","Fiun Outpost"},
+        {"Endurance",IntId.AugmentationInnateEndurance,10,"Fiun Ruun","Fiun Outpost"},
+        {"Coordination",IntId.AugmentationInnateCoordination,10,"Fiun Bayaas","Fiun Outpost"},
+        {"Quickness",IntId.AugmentationInnateQuickness,10,"Fiun Riish","Fiun Outpost"},
+        {"Focus",IntId.AugmentationInnateFocus,10,"Fiun Vasherr","Fiun Outpost"},
+        {"Self",IntId.AugmentationInnateSelf,10,"Fiun Noress","Fiun Outpost"}
+    },
+    ["Resistance Augs"] = {
+        {"All Resistances",IntId.AugmentationResistanceFamily,2},
+        {"Blunt",IntId.AugmentationResistanceBlunt,2,"Nawamara Dia","Hebian-To"},
+        {"Pierce",IntId.AugmentationResistancePierce,2,"Kyujo Rujen","Hebian-To"},
+        {"Slashing",IntId.AugmentationResistanceSlash,2,"Ilin Wis","Hebian-To"},
+        {"Fire",IntId.AugmentationResistanceFire,2,"Rikshen Ri","Hebian-To"},
+        {"Frost",IntId.AugmentationResistanceFrost,2,"Lu Bao","Hebian-To"},
+        {"Acid",IntId.AugmentationResistanceAcid,2,"Shujio Milao","Hebian-To"},
+        {"Lightning",IntId.AugmentationResistanceLightning,2,"Enli Yuo","Hebian-To"}
+    }
+}
+local augTreeOpenStates = {
+    ["Stat Augs"] = false,
+    ["Resistance Augs"] = false
 }
 local typeLuminanceAuraNalicana = 0
 local typeLuminanceAuraSeer = 1
@@ -123,10 +142,6 @@ print("[LUA]: Loading FlagTracker v"..version)
 local hud = ubviews.Huds.CreateHud("FlagTracker v"..version)
 hud.ShowInBar = true
 hud.WindowSettings = im.ImGuiWindowFlags.AlwaysAutoResize
-local augTreeRenderStatus = {}
-local augTreeInitialOpenStatus = {}
-augTreeInitialOpenStatus["Stat Augs"] = false
-augTreeInitialOpenStatus["Resistance Augs"] = false
 local flagTreeRenderStatus = {}
 local flagTreeInitialOpenStatus = {}
 
@@ -141,86 +156,78 @@ hud.OnRender.Add(function()
     local char = game.Character.Weenie
     if char == nil then return end
     if imgui.BeginTabBar("Flag Tracker Bar") then
+
         -- Augmentations Tab
         if imgui.BeginTabItem("Augmentations") then
-            local numColumns = 2
-            if imgui.BeginTable("Augmentations", numColumns*2) then
-                imgui.TableSetupColumn("Aug 1",im.ImGuiTableColumnFlags.WidthStretch,200)
-                imgui.TableSetupColumn("Aug 1 Points",im.ImGuiTableColumnFlags.WidthStretch,35)
-                imgui.TableSetupColumn("Aug 2",im.ImGuiTableColumnFlags.WidthStretch,200)
-                imgui.TableSetupColumn("Aug 2 Points",im.ImGuiTableColumnFlags.WidthStretch,35)
-                local lastCategory = nil
-                local currentColumnIndex = 0
-                for _, v in ipairs(augmentations) do
-                    local currentCategory = v[1]
-                    if currentCategory ~= lastCategory then
-                        if lastCategory ~= nil and augTreeRenderStatus[lastCategory] then
-                            imgui.TreePop()
-                        end
-                        imgui.TableNextRow()
-                        imgui.TableSetColumnIndex(0)
-                        imgui.Separator()
-                        imgui.SetNextItemOpen(augTreeInitialOpenStatus[currentCategory] == nil or augTreeInitialOpenStatus[currentCategory])
-                        augTreeRenderStatus[currentCategory] = imgui.TreeNode(currentCategory)
-                        imgui.TableSetColumnIndex(1)
-                        imgui.Separator()
-                        imgui.TableSetColumnIndex(2)
-                        imgui.Separator()
-                        imgui.TableSetColumnIndex(3)
-                        imgui.Separator()
-                        augTreeInitialOpenStatus[currentCategory] = augTreeRenderStatus[currentCategory]
-                        lastCategory = currentCategory
-                        currentColumnIndex = 0
-                    end
-                    if augTreeRenderStatus[currentCategory] then
-                        local augID = v[3]
-                        local value = 0
-                        if augID == nil then
-                            value = game.Character.GetInventoryCount("Asheron's Lesser Benediction")
-                        else
-                            value = char.Value(augID) or 0
-                        end
-
-                        local prefix = v[2]
-                        local cap = v[4]
-                        local npc = v[5]
-                        local town = v[6]
-                        local color = coloryellow
-                        if value >= cap then
-                            color = colorgreen
-                        elseif value == 0 then
-                            color = colorred
-                        end
-                        if currentColumnIndex == 0 then
-                            imgui.TableNextRow()
-                        end
-                        imgui.TableSetColumnIndex(currentColumnIndex)
-                        imgui.TextColored(color, prefix)
-
-                        if imgui.IsItemHovered() and npc and town then
-                            imgui.SetTooltip(string.format("NPC: %s\nTown: %s", npc, town))
-                        end
-
-                        if imgui.IsItemClicked() and npc then
-                            local npcObject = game.World.GetNearest(npc,DistanceType.T3D)
-                            if (npcObject) then
-                                game.Actions.ObjectSelect(npcObject.Id)
-                            end
-                        end
-
-                        currentColumnIndex = (currentColumnIndex + 1) % (numColumns*2)
-                        imgui.TableSetColumnIndex(currentColumnIndex)
-                        imgui.TextColored(color, value .. "/" .. cap)
-                        currentColumnIndex = (currentColumnIndex + 1) % (numColumns*2)
-                    end
+            for category, augList in pairs(augmentations) do
+                imgui.Separator()
+                if augTreeOpenStates[category] ~= nil then
+                    imgui.SetNextItemOpen(augTreeOpenStates[category])  -- Open the tree node
+                else
+                    imgui.SetNextItemOpen(true)
                 end
-                if lastCategory ~= nil and augTreeRenderStatus[lastCategory] then
+                local isTreeNodeOpen = imgui.TreeNode(category)
+                augTreeOpenStates[category] = isTreeNodeOpen
+                if isTreeNodeOpen then
+                    -- Create a new table for this category
+                    local numColumns = 2
+                    if imgui.BeginTable("Augmentations_" .. category, numColumns * 2) then
+                        imgui.TableSetupColumn("Aug 1", im.ImGuiTableColumnFlags.WidthStretch, 200)
+                        imgui.TableSetupColumn("Aug 1 Points", im.ImGuiTableColumnFlags.WidthStretch, 35)
+                        imgui.TableSetupColumn("Aug 2", im.ImGuiTableColumnFlags.WidthStretch, 200)
+                        imgui.TableSetupColumn("Aug 2 Points", im.ImGuiTableColumnFlags.WidthStretch, 35)
+
+                        local currentColumnIndex = 0
+
+                        for _, v in ipairs(augList) do
+                            local prefix = v[1]
+                            local augID = v[2]
+                            local cap = v[3]
+                            local npc = v[4]
+                            local town = v[5]
+                            local value = (augID == nil) and game.Character.GetInventoryCount("Asheron's Lesser Benediction") or (char.Value(augID) or 0)
+
+                            local color = coloryellow
+                            if value >= cap then
+                                color = colorgreen
+                            elseif value == 0 then
+                                color = colorred
+                            end
+
+                            if currentColumnIndex == 0 then
+                                imgui.TableNextRow()
+                            end
+
+                            imgui.TableSetColumnIndex(currentColumnIndex)
+                            imgui.TextColored(color, prefix)
+
+                            if imgui.IsItemHovered() and npc and town then
+                                imgui.SetTooltip(string.format("NPC: %s\nTown: %s", npc, town))
+                            end
+
+                            if imgui.IsItemClicked() and npc then
+                                local npcObject = game.World.GetNearest(npc, DistanceType.T3D)
+                                if npcObject then
+                                    game.Actions.ObjectSelect(npcObject.Id)
+                                end
+                            end
+
+                            currentColumnIndex = (currentColumnIndex + 1) % (numColumns * 2)
+                            imgui.TableSetColumnIndex(currentColumnIndex)
+                            imgui.TextColored(color, value .. "/" .. cap)
+                            currentColumnIndex = (currentColumnIndex + 1) % (numColumns * 2)
+                        end
+
+                        imgui.EndTable()
+                    end
+
                     imgui.TreePop()
                 end
-                imgui.EndTable()
             end
+
             imgui.EndTabItem()
         end
+
 
         -- Luminance Auras Tab
         if imgui.BeginTabItem("Luminance Auras") then
