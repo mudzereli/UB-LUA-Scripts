@@ -1,9 +1,9 @@
 local im = require("imgui")
 local ubviews = require("utilitybelt.views")
+local quest = require("quests")
 --local bit = require("bit32")
 local imgui = im.ImGui
 local version = "1.2.6"
-local quests = {}
 local currentHUDPosition = nil
 local defaultHUDposition = Vector2.new(500,100)
 
@@ -144,13 +144,6 @@ hud.WindowSettings = im.ImGuiWindowFlags.AlwaysAutoResize
 local flagTreeRenderStatus = {}
 local flagTreeInitialOpenStatus = {}
 
-game.World.OnChatText.Add(function(evt)
-    local taskname, solves, timestamp, description, num1, num2 = string.match(evt.Message, "([%w%s%(%)-]+) %- (%d+) solves %((%d+)%)\"([^\"]+)\" (%-?%d+) (%d+)")
-    if taskname and solves and timestamp and description and num1 and num2 then
-        table.insert(quests, {taskname,solves,timestamp,description,num1,num2})
-    end
-end)
-
 hud.OnRender.Add(function()
     local char = game.Character.Weenie
     if char == nil then return end
@@ -184,7 +177,12 @@ hud.OnRender.Add(function()
                             local cap = augInfo[3]
                             local npc = augInfo[4]
                             local town = augInfo[5]
-                            local value = (augID == nil) and game.Character.GetInventoryCount("Asheron's Lesser Benediction") or (char.Value(augID) or 0)
+                            local value = 0
+                            if augID == nil then
+                                value = game.Character.GetInventoryCount("Asheron's Lesser Benediction")
+                            else
+                                value = char.Value(augID)
+                            end
 
                             local color = coloryellow
                             if value >= cap then
@@ -323,19 +321,14 @@ hud.OnRender.Add(function()
                             cap = flagInfo[5]
                             local queststamp = flagInfo[4]
                             local questfield = flagInfo[6]
-                            local questinfo = quests[queststamp]
-                            if questinfo ~= nil then
+                            local quest = Quest.Dictionary[queststamp]
+                            if quest ~= nil then
                                 if questfield == 3 then
-                                    local expiration = questinfo[questfield] + questinfo[6]
-                                    if expiration >= os.time() then
+                                    if not IsQuestAvailable(queststamp) then
                                         value = 1
                                     end
                                 else
-                                    local questinfofield = tonumber(questinfo[questfield])
-                                    if questinfofield == nil then
-                                        questinfofield = 0
-                                    end
-                                    value = questinfofield
+                                    value = (tonumber(quest.solves) or 0)
                                 end
                             end
                         elseif type == typeAetheria then
@@ -374,29 +367,29 @@ hud.OnRender.Add(function()
         -- General Quests Tab
         if imgui.BeginTabItem("Quests") then
             if imgui.Button("Refresh Quests") then
-                quests = {}
-                game.Actions.InvokeChat("/myquests")
+                Quest.Refresh()
             end
             -- Quests Table
-            if imgui.BeginTable("Quests", 6, im.ImGuiTableFlags.ScrollY + im.ImGuiTableFlags.Sortable) then
+            if imgui.BeginTable("Quests", 7, im.ImGuiTableFlags.ScrollY + im.ImGuiTableFlags.Sortable) then
                 imgui.TableSetupColumn("Quest", im.ImGuiTableColumnFlags.WidthFixed, 256)
-                imgui.TableSetupColumn("#", im.ImGuiTableColumnFlags.WidthFixed, 16)
+                imgui.TableSetupColumn("Solves", im.ImGuiTableColumnFlags.WidthFixed, 16)
                 imgui.TableSetupColumn("TimeStamp", im.ImGuiTableColumnFlags.WidthFixed, 128)
                 imgui.TableSetupColumn("Description", im.ImGuiTableColumnFlags.WidthFixed, 512)
-                imgui.TableSetupColumn("N1", im.ImGuiTableColumnFlags.WidthFixed, 32)
-                imgui.TableSetupColumn("N2", im.ImGuiTableColumnFlags.WidthFixed, 64)
+                imgui.TableSetupColumn("MaxSolves", im.ImGuiTableColumnFlags.WidthFixed, 32)
+                imgui.TableSetupColumn("Delta", im.ImGuiTableColumnFlags.WidthFixed, 64)
+                imgui.TableSetupColumn("Expired", im.ImGuiTableColumnFlags.WidthFixed, 64)
                 imgui.TableSetupScrollFreeze(0, 1)
                 imgui.TableHeadersRow()
         
                 -- Handle sorting
                 local sort_specs = imgui.TableGetSortSpecs()
                 if sort_specs and sort_specs.SpecsDirty then
-                    table.sort(quests,function(a,b) 
+                    table.sort(Quest.List,function(a,b) 
                         local sortcol = sort_specs.Specs.ColumnIndex + 1
                         local sortasc = sort_specs.Specs.SortDirection == im.ImGuiSortDirection.Ascending
                         if a and b then
-                            local valA = a[sortcol]
-                            local valB = b[sortcol]
+                            local valA = GetFieldByID(a,sortcol)
+                            local valB = GetFieldByID(b,sortcol)
                             if valA and valB then
                                 if tonumber(valA) and tonumber(valB) then
                                     valA = tonumber(valA)
@@ -416,20 +409,28 @@ hud.OnRender.Add(function()
                 end
 
                 -- Populate table
-                for _, quest in ipairs(quests) do
+                for _, quest in ipairs(Quest.List) do
+                    local color = colorred
+                    if IsQuestMaxSolved(quest.id) then
+                        color = coloryellow
+                    elseif IsQuestAvailable(quest.id) then
+                        color = colorgreen
+                    end
                     imgui.TableNextRow()
                     imgui.TableSetColumnIndex(0)
-                    imgui.TextColored(colorgreen, quest[1]) -- Quest Name
+                    imgui.TextColored(color, quest.id) -- Quest Name
                     imgui.TableSetColumnIndex(1)
-                    imgui.TextColored(colorgreen, quest[2]) -- Solves
+                    imgui.TextColored(color, quest.solves) -- Solves
                     imgui.TableSetColumnIndex(2)
-                    imgui.TextColored(colorgreen, tostring(os.date("%Y-%m-%d %H:%M:%S", quest[3]))) -- Timestamp
+                    imgui.TextColored(color, tostring(os.date("%Y-%m-%d %H:%M:%S", quest.timestamp))) -- Timestamp
                     imgui.TableSetColumnIndex(3)
-                    imgui.TextColored(colorgreen, quest[4]) -- Description
+                    imgui.TextColored(color, quest.description) -- Description
                     imgui.TableSetColumnIndex(4)
-                    imgui.TextColored(colorgreen, quest[5]) -- N1
+                    imgui.TextColored(color, quest.maxsolves) -- MaxSolves
                     imgui.TableSetColumnIndex(5)
-                    imgui.TextColored(colorgreen, quest[6]) -- N2
+                    imgui.TextColored(color, quest.delta) -- Delta
+                    imgui.TableSetColumnIndex(6)
+                    imgui.TextColored(color, tostring(IsQuestAvailable(quest.id))) -- Expired
                 end
         
                 imgui.EndTable()
@@ -448,4 +449,4 @@ end)
 
 hud.Visible = true
 
-game.Actions.InvokeChat("/ub myquests")
+Quest.Refresh()
