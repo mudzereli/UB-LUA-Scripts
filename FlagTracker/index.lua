@@ -3,7 +3,7 @@ local ubviews = require("utilitybelt.views")
 local quest = require("quests")
 --local bit = require("bit32")
 local imgui = im.ImGui
-local version = "1.2.6"
+local version = "1.3.0"
 local currentHUDPosition = nil
 local defaultHUDposition = Vector2.new(500,100)
 
@@ -392,7 +392,9 @@ hud.OnRender.Add(function()
                             local valB = GetFieldByID(b,sortcol)
                             if valA and valB then
                                 if tonumber(valA) and tonumber(valB) then
+                                    ---@diagnostic disable-next-line
                                     valA = tonumber(valA)
+                                    ---@diagnostic disable-next-line
                                     valB = tonumber(valB)
                                 end
                                 if sortasc then
