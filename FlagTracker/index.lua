@@ -135,6 +135,7 @@ local characterflags = {
     ["Other Flags"] = {
         {typeQuest,"Candeth Keep Treehouse","strongholdbuildercomplete",1,2},
         {typeQuest,"Bur Flag (Portal)","burflagged(permanent)",1,2},
+        {typeQuest,"Singularity Caul","virindiisland",1,2},
         {typeQuest,"Luminance Flag","oracleluminancerewardsaccess_1110",1,2},
         {typeQuest,"Diemos Access","golemstonediemosgiven",1,2}
     }
