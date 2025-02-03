@@ -1,9 +1,8 @@
 local im = require("imgui")
 local ubviews = require("utilitybelt.views")
 local Quest = require("quests")
---local bit = require("bit32")
 local imgui = im.ImGui
-local version = "1.3.1"
+local version = "1.3.2"
 local currentHUDPosition = nil
 local defaultHUDposition = Vector2.new(500,100)
 
@@ -118,20 +117,29 @@ local recallspells = {
 local typeQuest = 0
 local typeAetheria = 2
 local characterflags = {
-    {"Additional Skill Credits",typeQuest,"+1 Skill Lum Aura","lumaugskillquest",2,2},
-    {"Additional Skill Credits",typeQuest,"+1 Skill Aun Ralirea","arantahkill1",1,2},
-    {"Additional Skill Credits",typeQuest,"+1 Skill Chasing Oswald","oswaldmanualcompleted",1,2},
-    {"Aetheria",typeAetheria,"Blue Aetheria (75)",IntId.AetheriaBitfield,1},
-    {"Aetheria",typeAetheria,"Yellow Aetheria (150)",IntId.AetheriaBitfield,2},
-    {"Aetheria",typeAetheria,"Red Aetheria (225)",IntId.AetheriaBitfield,4},
-    {"Augmentation Gems",typeQuest,"Sir Bellas","augmentationblankgemacquired",1,3},
-    {"Augmentation Gems",typeQuest,"Gladiator Diemos Token","pickedupmarkerboss10x",1,3},
-    {"Augmentation Gems",typeQuest,"100K Luminance Gem","blankaugluminancetimer_0511",1,3},
-    {"Other Flags",typeQuest,"Candeth Keep Treehouse","strongholdbuildercomplete",1,2},
-    {"Other Flags",typeQuest,"Bur Flag (Portal)","burflagged(permanent)",1,2},
-    {"Other Flags",typeQuest,"Luminance Flag","oracleluminancerewardsaccess_1110",1,2},
-    {"Other Flags",typeQuest,"Diemos Access","golemstonediemosgiven",1,2}
+    ["Additional Skill Credits"] = {
+        {typeQuest,"+1 Skill Lum Aura","lumaugskillquest",2,2},
+        {typeQuest,"+1 Skill Aun Ralirea","arantahkill1",1,2},
+        {typeQuest,"+1 Skill Chasing Oswald","oswaldmanualcompleted",1,2},
+    },
+    ["Aetheria"] = {
+        {typeAetheria,"Blue Aetheria (75)",IntId.AetheriaBitfield,1},
+        {typeAetheria,"Yellow Aetheria (150)",IntId.AetheriaBitfield,2},
+        {typeAetheria,"Red Aetheria (225)",IntId.AetheriaBitfield,4},
+    },
+    ["Augmentation Gems"] = {
+        {typeQuest,"Sir Bellas","augmentationblankgemacquired",1,3},
+        {typeQuest,"Gladiator Diemos Token","pickedupmarkerboss10x",1,3},
+        {typeQuest,"100K Luminance Gem","blankaugluminancetimer_0511",1,3},
+    },
+    ["Other Flags"] = {
+        {typeQuest,"Candeth Keep Treehouse","strongholdbuildercomplete",1,2},
+        {typeQuest,"Bur Flag (Portal)","burflagged(permanent)",1,2},
+        {typeQuest,"Luminance Flag","oracleluminancerewardsaccess_1110",1,2},
+        {typeQuest,"Diemos Access","golemstonediemosgiven",1,2}
+    }
 }
+local characterflagTreeOpenStates = {}
 local coloryellow = Vector4.new(1,1,0,1)
 local colorred = Vector4.new(1,0,0,1)
 local colorgreen = Vector4.new(0,1,0,1)
@@ -153,11 +161,7 @@ hud.OnRender.Add(function()
         if imgui.BeginTabItem("Augmentations") then
             for category, augList in pairs(augmentations) do
                 imgui.Separator()
-                if augTreeOpenStates[category] ~= nil then
-                    imgui.SetNextItemOpen(augTreeOpenStates[category])  -- Open the tree node
-                else
-                    imgui.SetNextItemOpen(true)
-                end
+                imgui.SetNextItemOpen(augTreeOpenStates[category] == nil or augTreeOpenStates[category])
                 local isTreeNodeOpen = imgui.TreeNode(category)
                 augTreeOpenStates[category] = isTreeNodeOpen
                 if isTreeNodeOpen then
@@ -292,74 +296,65 @@ hud.OnRender.Add(function()
 
         -- Character Flags Tab
         if imgui.BeginTabItem("Flags") then
-            if imgui.BeginTable("Character Flags", 2) then
-                imgui.TableSetupColumn("Flag 1",im.ImGuiTableColumnFlags.WidthStretch,200)
-                imgui.TableSetupColumn("Flag 1 Points",im.ImGuiTableColumnFlags.WidthStretch,35)
-                local lastCategory = nil
-                for _, flagInfo in ipairs(characterflags) do
-                    local currentCategory = flagInfo[1]
-                    if currentCategory ~= lastCategory then
-                        if lastCategory ~= nil and flagTreeRenderStatus[lastCategory] then
-                            imgui.TreePop()
-                        end
-                        imgui.TableNextRow()
-                        imgui.TableSetColumnIndex(0)
-                        imgui.Separator()
-                        imgui.SetNextItemOpen(flagTreeInitialOpenStatus[currentCategory] == nil or flagTreeInitialOpenStatus[currentCategory])
-                        flagTreeRenderStatus[currentCategory] = imgui.TreeNode(currentCategory)
-                        imgui.TableSetColumnIndex(1)
-                        imgui.Separator()
-                        flagTreeInitialOpenStatus[currentCategory] = flagTreeRenderStatus[currentCategory]
-                    end
-                    if flagTreeRenderStatus[currentCategory] then
-                        local type = flagInfo[2]
-                        local prefix
-                        local cap
-                        local value = 0
-                        if type == typeQuest then
-                            prefix = flagInfo[3]
-                            cap = flagInfo[5]
-                            local queststamp = flagInfo[4]
-                            local questfield = flagInfo[6]
-                            local quest = Quest.Dictionary[queststamp]
-                            if quest ~= nil then
-                                if questfield == 3 then
-                                    if not Quest:IsQuestAvailable(queststamp) then
-                                        value = 1
+            for category, flagInfo in pairs(characterflags) do
+                imgui.Separator()
+                imgui.SetNextItemOpen(characterflagTreeOpenStates[category] == nil or characterflagTreeOpenStates[category])
+                local isTreeNodeOpen = imgui.TreeNode(category)
+                characterflagTreeOpenStates[category] = isTreeNodeOpen
+                if isTreeNodeOpen then
+                    if imgui.BeginTable("Character Flags_"..category, 2) then
+                        imgui.TableSetupColumn("Flag 1",im.ImGuiTableColumnFlags.WidthStretch,200)
+                        imgui.TableSetupColumn("Flag 1 Points",im.ImGuiTableColumnFlags.WidthStretch,35)
+                            for _, flag in ipairs(flagInfo) do
+                                imgui.TableNextRow()
+                                imgui.TableSetColumnIndex(0)
+                                imgui.TableSetColumnIndex(1)
+                                local type = flag[1]
+                                local prefix
+                                local cap
+                                local value = 0
+                                if type == typeQuest then
+                                    prefix = flag[2]
+                                    cap = flag[4]
+                                    local queststamp = flag[3]
+                                    local questfield = flag[5]
+                                    local quest = Quest.Dictionary[queststamp]
+                                    if quest ~= nil then
+                                        if questfield == 3 then
+                                            if not Quest:IsQuestAvailable(queststamp) then
+                                                value = 1
+                                            end
+                                        else
+                                            value = (tonumber(quest.solves) or 0)
+                                        end
                                     end
-                                else
-                                    value = (tonumber(quest.solves) or 0)
+                                elseif type == typeAetheria then
+                                    prefix = flag[2]
+                                    local bitreq = flag[4]
+                                    local bitfield = flag[3]
+                                    ---@diagnostic disable-next-line
+                                    local bitvalue = char.Value(bitfield)
+                                    if bitvalue >= bitreq then
+                                        value = 1
+                                    end 
+                                    cap = 1
                                 end
+                                local color = coloryellow
+                                if value >= cap then
+                                    color = colorgreen
+                                elseif value == 0 then
+                                    color = colorred
+                                end
+                                imgui.TableNextRow()
+                                imgui.TableSetColumnIndex(0)
+                                imgui.TextColored(color, prefix)
+                                imgui.TableSetColumnIndex(1)
+                                imgui.TextColored(color, value .. "/" .. cap)
                             end
-                        elseif type == typeAetheria then
-                            prefix = flagInfo[3]
-                            local bitreq = flagInfo[5]
-                            local bitfield = flagInfo[4]
-                            ---@diagnostic disable-next-line
-                            local bitvalue = char.Value(bitfield)
-                            if bitvalue >= bitreq then
-                                value = 1
-                            end 
-                            cap = 1
-                        end
-                        local color = coloryellow
-                        if value >= cap then
-                            color = colorgreen
-                        elseif value == 0 then
-                            color = colorred
-                        end
-                        imgui.TableNextRow()
-                        imgui.TableSetColumnIndex(0)
-                        imgui.TextColored(color, prefix)
-                        imgui.TableSetColumnIndex(1)
-                        imgui.TextColored(color, value .. "/" .. cap)
+                        imgui.EndTable()
                     end
-                    lastCategory = currentCategory
-                end
-                if lastCategory ~= nil and flagTreeRenderStatus[lastCategory] then
                     imgui.TreePop()
                 end
-                imgui.EndTable()
             end
             imgui.EndTabItem()
         end
