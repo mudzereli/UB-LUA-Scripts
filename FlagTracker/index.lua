@@ -1,9 +1,9 @@
 local im = require("imgui")
 local ubviews = require("utilitybelt.views")
-local quest = require("quests")
+local Quest = require("quests")
 --local bit = require("bit32")
 local imgui = im.ImGui
-local version = "1.3.0"
+local version = "1.3.1"
 local currentHUDPosition = nil
 local defaultHUDposition = Vector2.new(500,100)
 
@@ -324,7 +324,7 @@ hud.OnRender.Add(function()
                             local quest = Quest.Dictionary[queststamp]
                             if quest ~= nil then
                                 if questfield == 3 then
-                                    if not IsQuestAvailable(queststamp) then
+                                    if not Quest:IsQuestAvailable(queststamp) then
                                         value = 1
                                     end
                                 else
@@ -367,17 +367,17 @@ hud.OnRender.Add(function()
         -- General Quests Tab
         if imgui.BeginTabItem("Quests") then
             if imgui.Button("Refresh Quests") then
-                Quest.Refresh()
+                Quest:Refresh()
             end
             -- Quests Table
             if imgui.BeginTable("Quests", 7, im.ImGuiTableFlags.ScrollY + im.ImGuiTableFlags.Sortable) then
                 imgui.TableSetupColumn("Quest", im.ImGuiTableColumnFlags.WidthFixed, 256)
-                imgui.TableSetupColumn("Solves", im.ImGuiTableColumnFlags.WidthFixed, 16)
+                imgui.TableSetupColumn("#", im.ImGuiTableColumnFlags.WidthFixed, 64)
                 imgui.TableSetupColumn("TimeStamp", im.ImGuiTableColumnFlags.WidthFixed, 128)
-                imgui.TableSetupColumn("Description", im.ImGuiTableColumnFlags.WidthFixed, 512)
-                imgui.TableSetupColumn("MaxSolves", im.ImGuiTableColumnFlags.WidthFixed, 32)
+                imgui.TableSetupColumn("Description", im.ImGuiTableColumnFlags.WidthFixed, 256)
+                imgui.TableSetupColumn("Max", im.ImGuiTableColumnFlags.WidthFixed, 64)
                 imgui.TableSetupColumn("Delta", im.ImGuiTableColumnFlags.WidthFixed, 64)
-                imgui.TableSetupColumn("Expired", im.ImGuiTableColumnFlags.WidthFixed, 64)
+                imgui.TableSetupColumn("Expire", im.ImGuiTableColumnFlags.WidthFixed, 128)
                 imgui.TableSetupScrollFreeze(0, 1)
                 imgui.TableHeadersRow()
         
@@ -388,8 +388,8 @@ hud.OnRender.Add(function()
                         local sortcol = sort_specs.Specs.ColumnIndex + 1
                         local sortasc = sort_specs.Specs.SortDirection == im.ImGuiSortDirection.Ascending
                         if a and b then
-                            local valA = GetFieldByID(a,sortcol)
-                            local valB = GetFieldByID(b,sortcol)
+                            local valA = Quest:GetFieldByID(a,sortcol)
+                            local valB = Quest:GetFieldByID(b,sortcol)
                             if valA and valB then
                                 if tonumber(valA) and tonumber(valB) then
                                     ---@diagnostic disable-next-line
@@ -413,9 +413,9 @@ hud.OnRender.Add(function()
                 -- Populate table
                 for _, quest in ipairs(Quest.List) do
                     local color = colorred
-                    if IsQuestMaxSolved(quest.id) then
+                    if Quest:IsQuestMaxSolved(quest.id) then
                         color = coloryellow
-                    elseif IsQuestAvailable(quest.id) then
+                    elseif Quest:IsQuestAvailable(quest.id) then
                         color = colorgreen
                     end
                     imgui.TableNextRow()
@@ -424,7 +424,7 @@ hud.OnRender.Add(function()
                     imgui.TableSetColumnIndex(1)
                     imgui.TextColored(color, quest.solves) -- Solves
                     imgui.TableSetColumnIndex(2)
-                    imgui.TextColored(color, tostring(os.date("%Y-%m-%d %H:%M:%S", quest.timestamp))) -- Timestamp
+                    imgui.TextColored(color, tostring(os.date("%m/%d/%Y %H:%M:%S", quest.timestamp))) -- Timestamp
                     imgui.TableSetColumnIndex(3)
                     imgui.TextColored(color, quest.description) -- Description
                     imgui.TableSetColumnIndex(4)
@@ -432,7 +432,7 @@ hud.OnRender.Add(function()
                     imgui.TableSetColumnIndex(5)
                     imgui.TextColored(color, quest.delta) -- Delta
                     imgui.TableSetColumnIndex(6)
-                    imgui.TextColored(color, tostring(IsQuestAvailable(quest.id))) -- Expired
+                    imgui.TextColored(color, tostring(os.date("%m/%d/%Y %H:%M:%S", quest.expiretime))) -- Expired
                 end
         
                 imgui.EndTable()
@@ -451,4 +451,4 @@ end)
 
 hud.Visible = true
 
-Quest.Refresh()
+Quest:Refresh()
