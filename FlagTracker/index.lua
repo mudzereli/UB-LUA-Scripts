@@ -2,7 +2,7 @@ local im = require("imgui")
 local ubviews = require("utilitybelt.views")
 local Quest = require("quests")
 local imgui = im.ImGui
-local version = "1.3.2"
+local version = "1.3.3"
 local currentHUDPosition = nil
 local defaultHUDposition = Vector2.new(500,100)
 
@@ -44,7 +44,7 @@ local augmentations = {
         {"Specialized Armor Tinkering",IntId.AugmentationSpecializeArmorTinkering,1,"Joshun Felden","Cragstone"},
         {"Specialized Item Tinkering",IntId.AugmentationSpecializeItemTinkering,1,"Brienne Carlus","Cragstone"},
         {"Specialized Magic Item Tinkering",IntId.AugmentationSpecializeMagicItemTinkering,1,"Burrell Sammrun","Cragstone"},
-        {"Specialized GearCraft",IntId.AugmentationSpecializeGearcraft,1,"Alex Brummel","Cragstone"},
+        --{"Specialized GearCraft",IntId.AugmentationSpecializeGearcraft,1,"Alex Brummel","Cragstone"},
         {"Specialized Salvaging",IntId.AugmentationSpecializeSalvaging,1,"Robert Crow","Cragstone"},
         {"25%% More Salvage",IntId.AugmentationBonusSalvage,4,"Kris Cennis","Cragstone"},
         {"5%% Imbue Chance",IntId.AugmentationBonusImbueChance,1,"Lug","Oolutanga's Refuge"}
@@ -116,6 +116,15 @@ local recallspells = {
 }
 local typeQuest = 0
 local typeAetheria = 2
+--[[
+TO ADD:
+    - Factions (Rossu Morta / Whispering Blade)
+    - Society / Rank
+    - Gauntlet ?
+    - Dereth Explorer
+    - Enlightenment
+    - Paragon
+]]--
 local characterflags = {
     ["Additional Skill Credits"] = {
         {typeQuest,"+1 Skill Lum Aura","lumaugskillquest",2,2},
@@ -136,6 +145,8 @@ local characterflags = {
         {typeQuest,"Candeth Keep Treehouse","strongholdbuildercomplete",1,2},
         {typeQuest,"Bur Flag (Portal)","burflagged(permanent)",1,2},
         {typeQuest,"Singularity Caul","virindiisland",1,2},
+        {typeQuest,"Vissidal Island","vissflagcomplete",1,2},
+        {typeQuest,"Dark Isle","darkisleflagged",1,2},
         {typeQuest,"Luminance Flag","oracleluminancerewardsaccess_1110",1,2},
         {typeQuest,"Diemos Access","golemstonediemosgiven",1,2}
     }
@@ -304,8 +315,8 @@ hud.OnRender.Add(function()
                 characterflagTreeOpenStates[category] = isTreeNodeOpen
                 if isTreeNodeOpen then
                     if imgui.BeginTable("Character Flags_"..category, 2) then
-                        imgui.TableSetupColumn("Flag 1",im.ImGuiTableColumnFlags.WidthStretch,200)
-                        imgui.TableSetupColumn("Flag 1 Points",im.ImGuiTableColumnFlags.WidthStretch,35)
+                        imgui.TableSetupColumn("Flag 1",im.ImGuiTableColumnFlags.WidthStretch,128)
+                        imgui.TableSetupColumn("Flag 1 Points",im.ImGuiTableColumnFlags.WidthStretch,64)
                             for _, flag in ipairs(flagInfo) do
                                 imgui.TableNextRow()
                                 imgui.TableSetColumnIndex(0)
@@ -346,11 +357,25 @@ hud.OnRender.Add(function()
                                 elseif value == 0 then
                                     color = colorred
                                 end
+                                local completionString = "Yes"
+                                if category == "Additional Skill Credits" then
+                                    completionString = tostring(value) .. "/" .. tostring(cap)
+                                elseif category == "Augmentation Gems" then
+                                    local queststamp = flag[3]
+                                    local quest = Quest.Dictionary[queststamp]
+                                    if quest == nil then 
+                                        completionString = "Augs"
+                                    else
+                                        completionString = Quest:FormatSeconds(quest.expiretime-os.time())
+                                    end
+                                elseif value < cap then
+                                    completionString = "No"
+                                end
                                 imgui.TableNextRow()
                                 imgui.TableSetColumnIndex(0)
                                 imgui.TextColored(color, prefix)
                                 imgui.TableSetColumnIndex(1)
-                                imgui.TextColored(color, value .. "/" .. cap)
+                                imgui.TextColored(color, completionString)
                             end
                         imgui.EndTable()
                     end
@@ -420,7 +445,7 @@ hud.OnRender.Add(function()
                     imgui.TableSetColumnIndex(1)
                     imgui.TextColored(color, quest.solves) -- Solves
                     imgui.TableSetColumnIndex(2)
-                    imgui.TextColored(color, tostring(os.date("%m/%d/%Y %H:%M:%S", quest.timestamp))) -- Timestamp
+                    imgui.TextColored(color, Quest:FormatTimeStamp(quest.timestamp)) -- Timestamp
                     imgui.TableSetColumnIndex(3)
                     imgui.TextColored(color, quest.description) -- Description
                     imgui.TableSetColumnIndex(4)
@@ -428,7 +453,7 @@ hud.OnRender.Add(function()
                     imgui.TableSetColumnIndex(5)
                     imgui.TextColored(color, quest.delta) -- Delta
                     imgui.TableSetColumnIndex(6)
-                    imgui.TextColored(color, tostring(os.date("%m/%d/%Y %H:%M:%S", quest.expiretime))) -- Expired
+                    imgui.TextColored(color, Quest:FormatSeconds(quest.expiretime - os.time())) -- Expired
                 end
         
                 imgui.EndTable()
