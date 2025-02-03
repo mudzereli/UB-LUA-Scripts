@@ -1,14 +1,14 @@
 local im = require("imgui")
 local ubviews = require("utilitybelt.views")
 local imgui = im.ImGui
-local version = "1.0.2"
+local version = "1.0.3"
 local inputQuestText = "paste quest text here"
 local inputQuestTextSize = Vector2.new(350, 350)
 local initSize = false
 local questSteps = {}
 local questStepsCompleted = {}
 
-local hud = ubviews.Huds.CreateHud("QuestHelper v" .. version)
+local hud = ubviews.Huds.CreateHud("QuestHelper v" .. version, 0x06006419)
 hud.ShowInBar = true
 
 hud.OnRender.Add(function()
