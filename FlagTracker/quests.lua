@@ -50,7 +50,6 @@ function libQuest:GetFieldByID(quest, id)
         quest.id,
         quest.solves,
         quest.timestamp,
-        quest.description,
         quest.maxsolves,
         quest.delta,
         quest.expiretime
@@ -88,6 +87,14 @@ function libQuest:FormatSeconds(seconds)
     end
     
     return result:match("^%s*(.-)%s*$") -- Trim any trailing space
+end
+
+function libQuest:GetTimeUntilExpire(quest)
+    local expireTime = self:FormatSeconds(quest.expiretime - os.time())
+    if expireTime == "0s" then
+        return "Ready"
+    end
+    return expireTime
 end
 
 return libQuest

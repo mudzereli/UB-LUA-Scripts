@@ -2,7 +2,7 @@ local im = require("imgui")
 local ubviews = require("utilitybelt.views")
 local Quest = require("quests")
 local imgui = im.ImGui
-local version = "1.3.3"
+local version = "1.3.4"
 local currentHUDPosition = nil
 local defaultHUDposition = Vector2.new(500,100)
 
@@ -158,11 +158,9 @@ local colorgreen = Vector4.new(0,1,0,1)
 
 print("[LUA]: Loading FlagTracker v"..version)
 
-local hud = ubviews.Huds.CreateHud("FlagTracker v"..version)
+local hud = ubviews.Huds.CreateHud("FlagTracker v"..version,0x06005A8A)
 hud.ShowInBar = true
 hud.WindowSettings = im.ImGuiWindowFlags.AlwaysAutoResize
-local flagTreeRenderStatus = {}
-local flagTreeInitialOpenStatus = {}
 
 hud.OnRender.Add(function()
     local char = game.Character.Weenie
@@ -391,11 +389,10 @@ hud.OnRender.Add(function()
                 Quest:Refresh()
             end
             -- Quests Table
-            if imgui.BeginTable("Quests", 7, im.ImGuiTableFlags.ScrollY + im.ImGuiTableFlags.Sortable) then
+            if imgui.BeginTable("Quests", 6, im.ImGuiTableFlags.ScrollY + im.ImGuiTableFlags.Sortable) then
                 imgui.TableSetupColumn("Quest", im.ImGuiTableColumnFlags.WidthFixed, 256)
-                imgui.TableSetupColumn("#", im.ImGuiTableColumnFlags.WidthFixed, 64)
-                imgui.TableSetupColumn("TimeStamp", im.ImGuiTableColumnFlags.WidthFixed, 128)
-                imgui.TableSetupColumn("Description", im.ImGuiTableColumnFlags.WidthFixed, 256)
+                imgui.TableSetupColumn("Solves", im.ImGuiTableColumnFlags.WidthFixed, 64)
+                imgui.TableSetupColumn("Completed", im.ImGuiTableColumnFlags.WidthFixed, 128)
                 imgui.TableSetupColumn("Max", im.ImGuiTableColumnFlags.WidthFixed, 64)
                 imgui.TableSetupColumn("Delta", im.ImGuiTableColumnFlags.WidthFixed, 64)
                 imgui.TableSetupColumn("Expire", im.ImGuiTableColumnFlags.WidthFixed, 128)
@@ -442,18 +439,19 @@ hud.OnRender.Add(function()
                     imgui.TableNextRow()
                     imgui.TableSetColumnIndex(0)
                     imgui.TextColored(color, quest.id) -- Quest Name
+                    if imgui.IsItemHovered() and quest.description then
+                        imgui.SetTooltip(quest.description)
+                    end
                     imgui.TableSetColumnIndex(1)
                     imgui.TextColored(color, quest.solves) -- Solves
                     imgui.TableSetColumnIndex(2)
                     imgui.TextColored(color, Quest:FormatTimeStamp(quest.timestamp)) -- Timestamp
                     imgui.TableSetColumnIndex(3)
-                    imgui.TextColored(color, quest.description) -- Description
-                    imgui.TableSetColumnIndex(4)
                     imgui.TextColored(color, quest.maxsolves) -- MaxSolves
-                    imgui.TableSetColumnIndex(5)
+                    imgui.TableSetColumnIndex(4)
                     imgui.TextColored(color, quest.delta) -- Delta
-                    imgui.TableSetColumnIndex(6)
-                    imgui.TextColored(color, Quest:FormatSeconds(quest.expiretime - os.time())) -- Expired
+                    imgui.TableSetColumnIndex(5)
+                    imgui.TextColored(color, Quest:GetTimeUntilExpire(quest)) -- Expired
                 end
         
                 imgui.EndTable()
