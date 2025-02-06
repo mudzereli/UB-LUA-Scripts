@@ -2,7 +2,7 @@ local im = require("imgui")
 local ubviews = require("utilitybelt.views")
 local Quest = require("quests")
 local imgui = im.ImGui
-local version = "1.3.4"
+local version = "1.3.5"
 local currentHUDPosition = nil
 local defaultHUDposition = Vector2.new(500,100)
 
@@ -152,6 +152,18 @@ local characterflags = {
     }
 }
 local characterflagTreeOpenStates = {}
+local societyquests = {
+    ["Initiate"] = {
+        {"Gear Knight Parts x10","GearKnightParts","GearknightPartsCollectionWait_0513"},
+        {"Gear Knight Phalanx Kill x10","GearknightInvasionPhalanxKilltask_0513","GearknightInvasionPhalanxKillWait_0513"},
+        {"Gear Knight Mana Siphon","GearknightInvasionHighSiphonStart_1009","GearknightInvasionHighSiphonWait_1009"},
+        {"Graveyard Skeleton Jaw x8","TaskGrave1JawCollectStarted","TaskGrave1JawCollectWait"},
+        {"Graveyard Wight Sorcerer Kill x12","TaskGrave1WightMageKilltask","TaskGrave1WightMageWait"},
+        {"Graveyard Shambling Archivist Kill","TaskGrave1BossKillStarted","TaskGrave1BossKillWait"},
+        {"Dark Isle Vaeshok Kill","TaskDIRuschkBossKillTask","TaskDIRuschkBossKillTaskWait"},
+        {"Dark Isle Deliver Remoran Fin","TaskDIDelivery","TaskDIDeliveryWait"}
+    }
+}
 local coloryellow = Vector4.new(1,1,0,1)
 local colorred = Vector4.new(1,0,0,1)
 local colorgreen = Vector4.new(0,1,0,1)
@@ -240,7 +252,7 @@ hud.OnRender.Add(function()
         end
 
         -- Luminance Auras Tab
-        if imgui.BeginTabItem("Luminance Auras") then
+        if imgui.BeginTabItem("Luminance") then
             for category, auraList in pairs(luminanceauras) do
                 imgui.SeparatorText(category)
                 if imgui.BeginTable("Luminance Auras_"..category, 2) then
@@ -277,12 +289,12 @@ hud.OnRender.Add(function()
             end
             imgui.EndTabItem()
         end
-
+        
         -- Recall Spells Tab
         if imgui.BeginTabItem("Recalls") then
             if imgui.BeginTable("Recall Spells",2) then
-                imgui.TableSetupColumn("RecallColumn1")
-                imgui.TableSetupColumn("RecallColumn2")
+                imgui.TableSetupColumn("RecallColumn1",im.ImGuiTableColumnFlags.WidthStretch,128)
+                imgui.TableSetupColumn("RecallColumn2",im.ImGuiTableColumnFlags.WidthStretch,32)
                 for _,recallInfo in ipairs(recallspells) do
                     local spellName = recallInfo[1]
                     local spellID = recallInfo[2]
@@ -313,8 +325,8 @@ hud.OnRender.Add(function()
                 characterflagTreeOpenStates[category] = isTreeNodeOpen
                 if isTreeNodeOpen then
                     if imgui.BeginTable("Character Flags_"..category, 2) then
-                        imgui.TableSetupColumn("Flag 1",im.ImGuiTableColumnFlags.WidthStretch,128)
-                        imgui.TableSetupColumn("Flag 1 Points",im.ImGuiTableColumnFlags.WidthStretch,64)
+                        imgui.TableSetupColumn("Flag 1",im.ImGuiTableColumnFlags.WidthStretch,256)
+                        imgui.TableSetupColumn("Flag 1 Points",im.ImGuiTableColumnFlags.WidthStretch,32)
                             for _, flag in ipairs(flagInfo) do
                                 imgui.TableNextRow()
                                 imgui.TableSetColumnIndex(0)
@@ -378,6 +390,91 @@ hud.OnRender.Add(function()
                         imgui.EndTable()
                     end
                     imgui.TreePop()
+                end
+            end
+            imgui.EndTabItem()
+        end
+        
+        -- Society Tab
+        if game.Character.Weenie.IntValues[IntId.Faction1Bits] ~= nil and imgui.BeginTabItem("Society") then
+            if imgui.Button("Refresh Quests") then
+                Quest:Refresh()
+            end
+            local factionbits = game.Character.Weenie.IntValues[IntId.Faction1Bits]
+            local factionscore = 0
+            local nextfactionrankscore = 0
+            local society = ""
+            local societyrank = ""
+            if factionbits == 1 then
+                society = "Celestial Hand"
+                factionscore = game.Character.Weenie.IntValues[IntId.SocietyRankCelhan]
+            elseif factionbits == 2 then
+                society = "Edlrytch Web"
+                factionscore = game.Character.Weenie.IntValues[IntId.SocietyRankEldweb]
+            elseif factionbits == 4 then
+                society = "Radiant Blood"
+                factionscore = game.Character.Weenie.IntValues[IntId.SocietyRankRadblo]
+            end
+            if factionscore >= 1001 then
+                societyrank = "Master"
+            elseif factionscore >= 601 then
+                nextfactionrankscore = 995
+                societyrank = "Lord"
+            elseif factionscore >= 301 then
+                nextfactionrankscore = 595
+                societyrank = "Knight"
+            elseif factionscore >= 101 then
+                nextfactionrankscore = 295
+                societyrank = "Adept"
+            else
+                nextfactionrankscore = 95
+                societyrank = "Initiate"
+            end
+            imgui.SeparatorText(society.." - "..societyrank)
+            if imgui.BeginTable("SocietyInfo",2) then
+                imgui.TableSetupColumn("Label",im.ImGuiTableColumnFlags.WidthStretch,150)
+                imgui.TableSetupColumn("Value",im.ImGuiTableColumnFlags.WidthStretch,40)
+                imgui.TableNextRow()
+                imgui.TableSetColumnIndex(0)
+                imgui.Text("# Of Ribbons for Next Rank")
+                imgui.TableSetColumnIndex(1)
+                imgui.TextColored(colorgreen,tostring(factionscore).."/"..tostring(nextfactionrankscore))
+                local quest = Quest.Dictionary["societyribbonsperdaycounter"]
+                if quest then
+                    imgui.TableNextRow()
+                    imgui.TableSetColumnIndex(0)
+                    imgui.Text("# Of Ribbons per Day")
+                    imgui.TableSetColumnIndex(1)
+                    imgui.TextColored(colorgreen,tostring(quest.solves).."/"..tostring(quest.maxsolves))
+                end
+                imgui.EndTable()
+            end
+            for factionrank, questList in pairs(societyquests) do
+                if factionscore >= 1 and factionrank == "Initiate" then
+                    imgui.SeparatorText(factionrank.." Quests")
+                    if imgui.BeginTable("SocietyInfo",2) then
+                        imgui.TableSetupColumn("Quest1",im.ImGuiTableColumnFlags.WidthStretch,128)
+                        imgui.TableSetupColumn("Status1",im.ImGuiTableColumnFlags.WidthStretch,32)
+                        --imgui.TableSetupColumn("Quest2",im.ImGuiTableColumnFlags.WidthStretch,64)
+                        --imgui.TableSetupColumn("Status2",im.ImGuiTableColumnFlags.WidthStretch,32)
+                        for socquest in questList do
+                            local socquestName = socquest[1]
+                            local socquestStart = string.lower(socquest[2])
+                            local socquestEnd = string.lower(socquest[3])
+                            imgui.TableNextRow()
+                            imgui.TableSetColumnIndex(0)
+                            imgui.Text(socquestName)
+                            imgui.TableSetColumnIndex(1)
+                            local questStart = Quest.Dictionary[socquestStart]
+                            local questEnd = Quest.Dictionary[socquestEnd]
+                            if questStart then
+                                imgui.TextColored(coloryellow,"Started")
+                            elseif questEnd then
+                                imgui.TextColored(colorgreen,Quest:GetTimeUntilExpire(questEnd))
+                            end
+                        end
+                        imgui.EndTable()
+                    end
                 end
             end
             imgui.EndTabItem()

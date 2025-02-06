@@ -90,6 +90,7 @@ function libQuest:FormatSeconds(seconds)
 end
 
 function libQuest:GetTimeUntilExpire(quest)
+    if quest == nil then return "Unknown" end
     local expireTime = self:FormatSeconds(quest.expiretime - os.time())
     if expireTime == "0s" then
         return "Ready"
