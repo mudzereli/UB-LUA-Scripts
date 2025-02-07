@@ -2,7 +2,7 @@ local im = require("imgui")
 local ubviews = require("utilitybelt.views")
 local Quest = require("quests")
 local imgui = im.ImGui
-local version = "1.3.7"
+local version = "1.3.8"
 local currentHUDPosition = nil
 local defaultHUDposition = Vector2.new(500,100)
 
@@ -172,14 +172,26 @@ local societyquests = {
         {"Dark Isle Battle Reports x10","TaskDIReportStarted","TaskDIReportWait",questTypeCollectItem,"Falatacot Battle Report",10},
         {"Graveyard Supplies to Massilor","TaskGrave2FedExStarted","TaskGrave2FedExWait",questTypeQuestTag,"TaskGrave2FedExDelivered"},
         {"Graveyard Stone Tracing","TaskGrave2WallCarvingStarted","TaskGrave2WallCarvingWait",questTypeCollectItem,"Imprinted Archaeologist's Paper",1}
+    },
+    ["Knight"] = {
+        {"Freebooter Blessed Moarsman Kill x50","TaskFreebooterMoarsmanKilltask","TaskFreebooterMoarsmanKilltaskWait",questTypeKillTask},
+        {"Freebooter Bandit Mana Boss Kill","TaskFreebooterBanditBossKill","TaskFreebooterBanditBossKillWait",questTypeKillTask},
+        {"Freebooter Glowing Jungle Lily x20","TaskFreebooterJungleLilyStarted","TaskFreebooterJungleLilyComplete",questTypeCollectItem,"Glowing Jungle Lily",20},
+        {"Freebooter Glowing Moar Gland x30","TaskFreebooterMoarGlandStarted","TaskFreebooterMoarGlandComplete",questTypeCollectItem,"Glowing Moar Gland",30},
+        {"Freebooter Killer Phyntos Wasp Kill x50","KillTaskPhyntosKiller1109","KillTaskPhyntosKillerWait1109",questTypeKillTask},
+        {"Freebooter Mana-Infused Jungle Flower x20","TaskFreebooterJungleFlowerStarted","TaskFreebooterJungleFlowerComplete",questTypeCollectItem,"Mana-Infused Jungle Flower",20},
+        {"Freebooter Phyntos Larva Kill x20","KillTaskPhyntosLarvae1109","KillTaskPhyntosLarvaeWait1109",questTypeKillTask},
+        {"Freebooter Phyntos Honey x10","","PhyntosHoneyComplete1109",questTypeCollectItem,"Phyntos Honey",10},
+        {"Freebooter Hive Queen Kill","","KillPhyntosQueenPickup1109",questTypeCollectItem,"Phyntos Queen's Abdomen",1},
+        {"Freebooter Phyntos Hive Splinters x10","","PhyntosHiveComplete1109",questTypeCollectItem,"Hive Splinter",10}
     }
 }
 local societyranks = {
-    ["Initiate"] = {1,95},
-    ["Adept"] = {101,295},
-    ["Knight"] = {301,595},
-    ["Lord"] = {601,995},
-    ["Master"] = {1001,9999}
+    ["Initiate"] = {1,95,50},
+    ["Adept"] = {101,295,100},
+    ["Knight"] = {301,595,150},
+    ["Lord"] = {601,995,200},
+    ["Master"] = {1001,9999,0}
 }
 
 local coloryellow = Vector4.new(1,1,0,1)
@@ -423,6 +435,7 @@ hud.OnRender.Add(function()
             local nextfactionrankscore = 0
             local society = ""
             local societyrank = ""
+            local maxribbonsperday = 0
             -- Determine Which Society
             if factionbits == 1 then
                 society = "Celestial Hand"
@@ -441,6 +454,7 @@ hud.OnRender.Add(function()
                 if factionscore >= lowerT and factionscore <= upperT then
                     societyrank = isocietyrank
                     nextfactionrankscore = upperT
+                    maxribbonsperday = thresholds[3]
                 end
             end
             imgui.SeparatorText(society.." - "..societyrank)
@@ -458,7 +472,7 @@ hud.OnRender.Add(function()
                     imgui.TableSetColumnIndex(0)
                     imgui.Text("# Of Ribbons per Day")
                     imgui.TableSetColumnIndex(1)
-                    imgui.TextColored(colorgreen,tostring(quest.solves).."/"..tostring(quest.maxsolves))
+                    imgui.TextColored(colorgreen,tostring(quest.solves).."/"..tostring(maxribbonsperday))
                 end
                 local quest = Quest.Dictionary["societyarmorwritwait"]
                 if quest then
@@ -490,7 +504,7 @@ hud.OnRender.Add(function()
                                 local socquestEnd = string.lower(socquest[3])
                                 local questType = socquest[4]
                                 local questColor = coloryellow
-                                local questString = "Started"
+                                local questString = "Unknown"
                                 imgui.TableNextRow()
                                 local questStart = Quest.Dictionary[socquestStart]
                                 local questEnd = Quest.Dictionary[socquestEnd]
