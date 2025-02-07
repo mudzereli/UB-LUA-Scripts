@@ -2,7 +2,7 @@ local im = require("imgui")
 local ubviews = require("utilitybelt.views")
 local Quest = require("quests")
 local imgui = im.ImGui
-local version = "1.3.5"
+local version = "1.3.6"
 local currentHUDPosition = nil
 local defaultHUDposition = Vector2.new(500,100)
 
@@ -152,18 +152,37 @@ local characterflags = {
     }
 }
 local characterflagTreeOpenStates = {}
+local questTypeOther = 0
+local questTypeKillTask = 1
+local questTypeCollectItem = 2
+local questTypeQuestTag = 3
 local societyquests = {
     ["Initiate"] = {
-        {"Gear Knight Parts x10","GearKnightParts","GearknightPartsCollectionWait_0513"},
-        {"Gear Knight Phalanx Kill x10","GearknightInvasionPhalanxKilltask_0513","GearknightInvasionPhalanxKillWait_0513"},
-        {"Gear Knight Mana Siphon","GearknightInvasionHighSiphonStart_1009","GearknightInvasionHighSiphonWait_1009"},
-        {"Graveyard Skeleton Jaw x8","TaskGrave1JawCollectStarted","TaskGrave1JawCollectWait"},
-        {"Graveyard Wight Sorcerer Kill x12","TaskGrave1WightMageKilltask","TaskGrave1WightMageWait"},
-        {"Graveyard Shambling Archivist Kill","TaskGrave1BossKillStarted","TaskGrave1BossKillWait"},
-        {"Dark Isle Vaeshok Kill","TaskDIRuschkBossKillTask","TaskDIRuschkBossKillTaskWait"},
-        {"Dark Isle Deliver Remoran Fin","TaskDIDelivery","TaskDIDeliveryWait"}
+        {"Gear Knight Parts x10","","GearknightPartsCollectionWait_0513",questTypeCollectItem,"Pile of Gearknight Parts",10},
+        {"Gear Knight Phalanx Kill x10","GearknightInvasionPhalanxKilltask_0513","GearknightInvasionPhalanxKillWait_0513",questTypeKillTask},
+        {"Gear Knight Mana Siphon","GearknightInvasionHighSiphonStart_1009","GearknightInvasionHighSiphonWait_1009",questTypeQuestTag,"GearknightInvasionHighSiphonStart_1009"},
+        {"Graveyard Skeleton Jaw x8","TaskGrave1JawCollectStarted","TaskGrave1JawCollectWait",questTypeCollectItem,"Pyre Skeleton Jaw",8},
+        {"Graveyard Wight Sorcerer Kill x12","TaskGrave1WightMageKilltask","TaskGrave1WightMageWait",questTypeKillTask},
+        {"Graveyard Shambling Archivist Kill","TaskGrave1BossKillStarted","TaskGrave1BossKillWait",questTypeKillTask},
+        {"Dark Isle Vaeshok Kill","TaskDIRuschkBossKillTask","TaskDIRuschkBossKillTaskWait",questTypeKillTask},
+        {"Dark Isle Deliver Remoran Fin","TaskDIDelivery","TaskDIDeliveryWait",questTypeOther}
+    },
+    ["Adept"] = {
+        {"Dark Isle Black Coral x10","TaskDIBlackCoralStarted","TaskDIBlackCoralComplete",questTypeCollectItem,"Black Coral",10},
+        {"Dark Isle Crystal of Perception","TaskDIScoutStarted","TaskDIScoutComplete",questTypeOther},
+        {"Dark Isle Battle Reports x10","TaskDIReportStarted","TaskDIReportWait",questTypeCollectItem,"Falatacot Battle Report",10},
+        {"Graveyard Supplies to Massilor","TaskGrave2FedExStarted","TaskGrave2FedExWait",questTypeQuestTag,"TaskGrave2FedExDelivered"},
+        {"Graveyard Stone Tracing","TaskGrave2WallCarvingStarted","TaskGrave2WallCarvingWait",questTypeCollectItem,"Imprinted Archaeologist's Paper",1}
     }
 }
+local societyranks = {
+    ["Initiate"] = {1,95},
+    ["Adept"] = {101,295},
+    ["Knight"] = {301,595},
+    ["Lord"] = {601,995},
+    ["Master"] = {1001,9999}
+}
+
 local coloryellow = Vector4.new(1,1,0,1)
 local colorred = Vector4.new(1,0,0,1)
 local colorgreen = Vector4.new(0,1,0,1)
@@ -405,6 +424,7 @@ hud.OnRender.Add(function()
             local nextfactionrankscore = 0
             local society = ""
             local societyrank = ""
+            -- Determine Which Society
             if factionbits == 1 then
                 society = "Celestial Hand"
                 factionscore = game.Character.Weenie.IntValues[IntId.SocietyRankCelhan]
@@ -415,20 +435,14 @@ hud.OnRender.Add(function()
                 society = "Radiant Blood"
                 factionscore = game.Character.Weenie.IntValues[IntId.SocietyRankRadblo]
             end
-            if factionscore >= 1001 then
-                societyrank = "Master"
-            elseif factionscore >= 601 then
-                nextfactionrankscore = 995
-                societyrank = "Lord"
-            elseif factionscore >= 301 then
-                nextfactionrankscore = 595
-                societyrank = "Knight"
-            elseif factionscore >= 101 then
-                nextfactionrankscore = 295
-                societyrank = "Adept"
-            else
-                nextfactionrankscore = 95
-                societyrank = "Initiate"
+            -- Determine Society Rank
+            for isocietyrank, thresholds in pairs(societyranks) do
+                local lowerT = thresholds[1]
+                local upperT = thresholds[2]
+                if factionscore >= lowerT and factionscore <= upperT then
+                    societyrank = isocietyrank
+                    nextfactionrankscore = upperT
+                end
             end
             imgui.SeparatorText(society.." - "..societyrank)
             if imgui.BeginTable("SocietyInfo",2) then
@@ -449,9 +463,11 @@ hud.OnRender.Add(function()
                 end
                 imgui.EndTable()
             end
-            for factionrank, questList in pairs(societyquests) do
-                if factionscore >= 1 and factionrank == "Initiate" then
-                    imgui.SeparatorText(factionrank.." Quests")
+            for isocietyrank, questList in pairs(societyquests) do
+                local thresholds = societyranks[isocietyrank]
+                local lowerT = thresholds[1]
+                if factionscore >= lowerT then
+                    imgui.SeparatorText(isocietyrank.." Quests")
                     if imgui.BeginTable("SocietyInfo",2) then
                         imgui.TableSetupColumn("Quest1",im.ImGuiTableColumnFlags.WidthStretch,128)
                         imgui.TableSetupColumn("Status1",im.ImGuiTableColumnFlags.WidthStretch,32)
@@ -461,17 +477,48 @@ hud.OnRender.Add(function()
                             local socquestName = socquest[1]
                             local socquestStart = string.lower(socquest[2])
                             local socquestEnd = string.lower(socquest[3])
+                            local questType = socquest[4]
+                            local questColor = coloryellow
+                            local questString = "Started"
                             imgui.TableNextRow()
-                            imgui.TableSetColumnIndex(0)
-                            imgui.Text(socquestName)
-                            imgui.TableSetColumnIndex(1)
                             local questStart = Quest.Dictionary[socquestStart]
                             local questEnd = Quest.Dictionary[socquestEnd]
-                            if questStart then
-                                imgui.TextColored(coloryellow,"Started")
+                            if questType == questTypeQuestTag and Quest:IsQuestAvailable(socquestEnd) then
+                                local tag = string.lower(socquest[5])
+                                local completeQuest = Quest.Dictionary[tag]
+                                if completeQuest then
+                                    questColor = colorgreen
+                                    questString = "Complete"
+                                end
+                            elseif questStart then
+                                if questType == questTypeKillTask then
+                                    questString = "Started ("..questStart.solves..")"
+                                    if questStart.solves == questStart.maxsolves then
+                                        questColor = colorgreen
+                                        questString = "Complete ("..questStart.solves..")"
+                                    end
+                                elseif questType == questTypeCollectItem then
+                                    local questItem = socquest[5]
+                                    local questItemCount = socquest[6]
+                                    local collectedCount = game.Character.GetInventoryCount(questItem)
+                                    questString = "Started ("..collectedCount..")"
+                                    if collectedCount == questItemCount then
+                                        questColor = colorgreen
+                                        questString = "Complete ("..collectedCount..")"
+                                    end
+                                end
                             elseif questEnd then
-                                imgui.TextColored(colorgreen,Quest:GetTimeUntilExpire(questEnd))
+                                questString = Quest:GetTimeUntilExpire(questEnd)
+                                if questString == "Ready" then
+                                    questColor = coloryellow
+                                else
+                                    questColor = colorred
+                                end
                             end
+                            imgui.TableSetColumnIndex(0)
+                            imgui.TextColored(questColor,socquestName)
+                            imgui.TableSetColumnIndex(1)
+                            imgui.TextColored(questColor,questString)
                         end
                         imgui.EndTable()
                     end

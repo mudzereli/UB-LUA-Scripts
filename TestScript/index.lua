@@ -466,6 +466,17 @@ hud.OnRender.Add(function ()
             end
             imgui.EndTabItem()
         end
+
+        if imgui.BeginTabItem("Quests") then
+            if imgui.Button("Eater Jaw (125)") then
+                game.Actions.InvokeChat("/vt start")
+                game.Actions.InvokeChat("/vt opt set enablebuffing false")
+                game.Actions.InvokeChat("@buff")
+                game.Actions.InvokeChat("/vt meta load quests\\q-eater-jaw-125")
+            end
+            imgui.EndTabItem()
+        end
+
         imgui.EndTabBar()
     end
 
