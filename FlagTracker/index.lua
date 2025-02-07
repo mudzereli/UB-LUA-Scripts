@@ -119,7 +119,6 @@ local typeAetheria = 2
 --[[
 TO ADD:
     - Factions (Rossu Morta / Whispering Blade)
-    - Society / Rank
     - Gauntlet ?
     - Dereth Explorer
     - Enlightenment
@@ -471,8 +470,6 @@ hud.OnRender.Add(function()
                     if imgui.BeginTable("SocietyInfo",2) then
                         imgui.TableSetupColumn("Quest1",im.ImGuiTableColumnFlags.WidthStretch,128)
                         imgui.TableSetupColumn("Status1",im.ImGuiTableColumnFlags.WidthStretch,32)
-                        --imgui.TableSetupColumn("Quest2",im.ImGuiTableColumnFlags.WidthStretch,64)
-                        --imgui.TableSetupColumn("Status2",im.ImGuiTableColumnFlags.WidthStretch,32)
                         for socquest in questList do
                             local socquestName = socquest[1]
                             local socquestStart = string.lower(socquest[2])
