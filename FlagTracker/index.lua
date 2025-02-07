@@ -2,7 +2,7 @@ local im = require("imgui")
 local ubviews = require("utilitybelt.views")
 local Quest = require("quests")
 local imgui = im.ImGui
-local version = "1.3.6"
+local version = "1.3.7"
 local currentHUDPosition = nil
 local defaultHUDposition = Vector2.new(500,100)
 
@@ -164,7 +164,7 @@ local societyquests = {
         {"Graveyard Wight Sorcerer Kill x12","TaskGrave1WightMageKilltask","TaskGrave1WightMageWait",questTypeKillTask},
         {"Graveyard Shambling Archivist Kill","TaskGrave1BossKillStarted","TaskGrave1BossKillWait",questTypeKillTask},
         {"Dark Isle Vaeshok Kill","TaskDIRuschkBossKillTask","TaskDIRuschkBossKillTaskWait",questTypeKillTask},
-        {"Dark Isle Deliver Remoran Fin","TaskDIDelivery","TaskDIDeliveryWait",questTypeOther}
+        {"Dark Isle Deliver Remoran Fin","","TaskDIDeliveryWait",questTypeQuestTag,"TaskDIDelivery"}
     },
     ["Adept"] = {
         {"Dark Isle Black Coral x10","TaskDIBlackCoralStarted","TaskDIBlackCoralComplete",questTypeCollectItem,"Black Coral",10},
@@ -460,64 +460,80 @@ hud.OnRender.Add(function()
                     imgui.TableSetColumnIndex(1)
                     imgui.TextColored(colorgreen,tostring(quest.solves).."/"..tostring(quest.maxsolves))
                 end
+                local quest = Quest.Dictionary["societyarmorwritwait"]
+                if quest then
+                    imgui.TableNextRow()
+                    imgui.TableSetColumnIndex(0)
+                    imgui.Text("Daily Society Armor Writ")
+                    imgui.TableSetColumnIndex(1)
+                    local questColor = colorred
+                    local questStatus = Quest:GetTimeUntilExpire(quest)
+                    if questStatus == "Ready" then 
+                        questColor = colorgreen
+                    end
+                    imgui.TextColored(questColor,questStatus)
+                end
                 imgui.EndTable()
             end
             for isocietyrank, questList in pairs(societyquests) do
                 local thresholds = societyranks[isocietyrank]
                 local lowerT = thresholds[1]
                 if factionscore >= lowerT then
-                    imgui.SeparatorText(isocietyrank.." Quests")
-                    if imgui.BeginTable("SocietyInfo",2) then
-                        imgui.TableSetupColumn("Quest1",im.ImGuiTableColumnFlags.WidthStretch,128)
-                        imgui.TableSetupColumn("Status1",im.ImGuiTableColumnFlags.WidthStretch,32)
-                        for socquest in questList do
-                            local socquestName = socquest[1]
-                            local socquestStart = string.lower(socquest[2])
-                            local socquestEnd = string.lower(socquest[3])
-                            local questType = socquest[4]
-                            local questColor = coloryellow
-                            local questString = "Started"
-                            imgui.TableNextRow()
-                            local questStart = Quest.Dictionary[socquestStart]
-                            local questEnd = Quest.Dictionary[socquestEnd]
-                            if questType == questTypeQuestTag and Quest:IsQuestAvailable(socquestEnd) then
-                                local tag = string.lower(socquest[5])
-                                local completeQuest = Quest.Dictionary[tag]
-                                if completeQuest then
-                                    questColor = colorgreen
-                                    questString = "Complete"
-                                end
-                            elseif questStart then
-                                if questType == questTypeKillTask then
-                                    questString = "Started ("..questStart.solves..")"
-                                    if questStart.solves == questStart.maxsolves then
+                    imgui.Separator()
+                    if imgui.TreeNode(isocietyrank.." Quests") then
+                        if imgui.BeginTable("SocietyInfo",2) then
+                            imgui.TableSetupColumn("Quest1",im.ImGuiTableColumnFlags.WidthStretch,128)
+                            imgui.TableSetupColumn("Status1",im.ImGuiTableColumnFlags.WidthStretch,32)
+                            for socquest in questList do
+                                local socquestName = socquest[1]
+                                local socquestStart = string.lower(socquest[2])
+                                local socquestEnd = string.lower(socquest[3])
+                                local questType = socquest[4]
+                                local questColor = coloryellow
+                                local questString = "Started"
+                                imgui.TableNextRow()
+                                local questStart = Quest.Dictionary[socquestStart]
+                                local questEnd = Quest.Dictionary[socquestEnd]
+                                if questType == questTypeQuestTag and Quest:IsQuestAvailable(socquestEnd) then
+                                    local tag = string.lower(socquest[5])
+                                    local completeQuest = Quest.Dictionary[tag]
+                                    if completeQuest then
                                         questColor = colorgreen
-                                        questString = "Complete ("..questStart.solves..")"
+                                        questString = "Complete"
                                     end
-                                elseif questType == questTypeCollectItem then
-                                    local questItem = socquest[5]
-                                    local questItemCount = socquest[6]
-                                    local collectedCount = game.Character.GetInventoryCount(questItem)
-                                    questString = "Started ("..collectedCount..")"
-                                    if collectedCount == questItemCount then
-                                        questColor = colorgreen
-                                        questString = "Complete ("..collectedCount..")"
+                                elseif questStart then
+                                    if questType == questTypeKillTask then
+                                        questString = "Started ("..questStart.solves..")"
+                                        if questStart.solves == questStart.maxsolves then
+                                            questColor = colorgreen
+                                            questString = "Complete ("..questStart.solves..")"
+                                        end
+                                    elseif questType == questTypeCollectItem then
+                                        local questItem = socquest[5]
+                                        local questItemCount = socquest[6]
+                                        local collectedCount = game.Character.GetInventoryCount(questItem)
+                                        questString = "Started ("..collectedCount..")"
+                                        if collectedCount == questItemCount then
+                                            questColor = colorgreen
+                                            questString = "Complete ("..collectedCount..")"
+                                        end
+                                    end
+                                elseif questEnd then
+                                    questString = Quest:GetTimeUntilExpire(questEnd)
+                                    if questString == "Ready" then
+                                        questColor = coloryellow
+                                    else
+                                        questColor = colorred
                                     end
                                 end
-                            elseif questEnd then
-                                questString = Quest:GetTimeUntilExpire(questEnd)
-                                if questString == "Ready" then
-                                    questColor = coloryellow
-                                else
-                                    questColor = colorred
-                                end
+                                imgui.TableSetColumnIndex(0)
+                                imgui.TextColored(questColor,socquestName)
+                                imgui.TableSetColumnIndex(1)
+                                imgui.TextColored(questColor,questString)
                             end
-                            imgui.TableSetColumnIndex(0)
-                            imgui.TextColored(questColor,socquestName)
-                            imgui.TableSetColumnIndex(1)
-                            imgui.TextColored(questColor,questString)
+                            imgui.EndTable()
                         end
-                        imgui.EndTable()
+                        imgui.TreePop()
                     end
                 end
             end
