@@ -2,7 +2,7 @@ local im = require("imgui")
 local ubviews = require("utilitybelt.views")
 local Quest = require("quests")
 local imgui = im.ImGui
-local version = "1.3.8"
+local version = "1.3.9"
 local currentHUDPosition = nil
 local defaultHUDposition = Vector2.new(500,100)
 
@@ -240,35 +240,44 @@ hud.OnRender.Add(function()
                                 value = char.Value(augID)
                             end
 
-                            local color = coloryellow
-                            if value >= cap then
-                                color = colorgreen
-                            elseif value == 0 then
-                                color = colorred
-                            end
+                            local skip = (category == "Stat Augs" and char.Value(IntId.AugmentationInnateFamily) == 10 and value == 0) 
+                                      or (category == "Resistance Augs" and char.Value(IntId.AugmentationResistanceFamily) == 2 and value == 0)
+                                      or (augID == IntId.AugmentationSpecializeMagicItemTinkering and game.Character.Weenie.Skills[SkillId.MagicItemTinkering].Training == SkillTrainingType.Untrained)
+                                      or (augID == IntId.AugmentationSpecializeWeaponTinkering and game.Character.Weenie.Skills[SkillId.WeaponTinkering].Training == SkillTrainingType.Untrained)
+                                      or (augID == IntId.AugmentationSpecializeArmorTinkering and game.Character.Weenie.Skills[SkillId.ArmorTinkering].Training == SkillTrainingType.Untrained)
+                                      or (augID == IntId.AugmentationSpecializeItemTinkering and game.Character.Weenie.Skills[SkillId.ItemTinkering].Training == SkillTrainingType.Untrained)
 
-                            if currentColumnIndex == 0 then
-                                imgui.TableNextRow()
-                            end
-
-                            imgui.TableSetColumnIndex(currentColumnIndex)
-                            imgui.TextColored(color, prefix)
-
-                            if imgui.IsItemHovered() and npc and town then
-                                imgui.SetTooltip(string.format("NPC: %s\nTown: %s", npc, town))
-                            end
-
-                            if imgui.IsItemClicked() and npc then
-                                local npcObject = game.World.GetNearest(npc, DistanceType.T3D)
-                                if npcObject then
-                                    game.Actions.ObjectSelect(npcObject.Id)
+                            if not skip then
+                                local color = coloryellow
+                                if value >= cap then
+                                    color = colorgreen
+                                elseif value == 0 then
+                                    color = colorred
                                 end
-                            end
 
-                            currentColumnIndex = (currentColumnIndex + 1) % (numColumns * 2)
-                            imgui.TableSetColumnIndex(currentColumnIndex)
-                            imgui.TextColored(color, value .. "/" .. cap)
-                            currentColumnIndex = (currentColumnIndex + 1) % (numColumns * 2)
+                                if currentColumnIndex == 0 then
+                                    imgui.TableNextRow()
+                                end
+
+                                imgui.TableSetColumnIndex(currentColumnIndex)
+                                imgui.TextColored(color, prefix)
+
+                                if imgui.IsItemHovered() and npc and town then
+                                    imgui.SetTooltip(string.format("NPC: %s\nTown: %s", npc, town))
+                                end
+
+                                if imgui.IsItemClicked() and npc then
+                                    local npcObject = game.World.GetNearest(npc, DistanceType.T3D)
+                                    if npcObject then
+                                        game.Actions.ObjectSelect(npcObject.Id)
+                                    end
+                                end
+
+                                currentColumnIndex = (currentColumnIndex + 1) % (numColumns * 2)
+                                imgui.TableSetColumnIndex(currentColumnIndex)
+                                imgui.TextColored(color, value .. "/" .. cap)
+                                currentColumnIndex = (currentColumnIndex + 1) % (numColumns * 2)
+                            end
                         end
 
                         imgui.EndTable()
@@ -470,9 +479,22 @@ hud.OnRender.Add(function()
                 if quest then
                     imgui.TableNextRow()
                     imgui.TableSetColumnIndex(0)
-                    imgui.Text("# Of Ribbons per Day")
+                    imgui.Text("# Of Ribbons per Day (Counter)")
                     imgui.TableSetColumnIndex(1)
                     imgui.TextColored(colorgreen,tostring(quest.solves).."/"..tostring(maxribbonsperday))
+                end
+                local quest = Quest.Dictionary["societyribbonsperdaytimer"]
+                if quest then
+                    imgui.TableNextRow()
+                    imgui.TableSetColumnIndex(0)
+                    imgui.Text("# Of Ribbons per Day (Timer)")
+                    imgui.TableSetColumnIndex(1)
+                    local questColor = colorred
+                    local questStatus = Quest:GetTimeUntilExpire(quest)
+                    if questStatus == "Ready" then 
+                        questColor = colorgreen
+                    end
+                    imgui.TextColored(questColor,questStatus)
                 end
                 local quest = Quest.Dictionary["societyarmorwritwait"]
                 if quest then
