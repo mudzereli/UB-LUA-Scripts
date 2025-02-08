@@ -38,6 +38,7 @@
     - Access Flags (Vissidal, Dark Isle, Bur, Etc)
     - Other Flags (Luminance Unlock, Diemos Access)
 - Load the script and then open the UI from the Script Hud Bar.
+
 ![flagtracker_ui1](https://i.ibb.co/Nr3ryW2/image-2024-12-31-080246218.png)
 
 ### QuestHelper
