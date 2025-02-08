@@ -87,11 +87,14 @@ local luminanceauras = {
         {"+1 All Skills",IntId.LumAugAllSkills,10},
     },
     ["Seer Auras"] = {
-        {"+2 Specialized Skills",IntId.LumAugSkilledSpec,5},
-        {"+1 Damage Reduction Rating",IntId.LumAugDamageReductionRating,5},
-        {"+1 Damage Rating",IntId.LumAugDamageRating,5},
-        {"+1 Crit Damage Rating",IntId.LumAugCritDamageRating,5},
-        {"+1 Crit Reduction Rating",IntId.LumAugCritReductionRating,5}
+        {"(Ka'hiri) +2 Specialized Skills",IntId.LumAugSkilledSpec,5,"LoyalToKahiri"},
+        {"(Ka'hiri) +1 Damage Rating",IntId.LumAugDamageRating,5,"LoyalToKahiri"},
+        {"(Shade of Lady Adja) +2 Specialized Skills",IntId.LumAugSkilledSpec,5,"LoyalToShadeOfLadyAdja"},
+        {"(Shade of Lady Adja) +1 Damage Reduction Rating",IntId.LumAugDamageReductionRating,5,"LoyalToShadeOfLadyAdja"},
+        {"(Liam of Gelid) +1 Damage Rating",IntId.LumAugDamageRating,5,"LoyalToLiamOfGelid"},
+        {"(Liam of Gelid) +1 Crit Damage Rating",IntId.LumAugCritDamageRating,5,"LoyalToLiamOfGelid"},
+        {"(Lord Tyragar) +1 Crit Reduction Rating",IntId.LumAugCritReductionRating,5,"LoyalToLordTyragar"},
+        {"(Lord Tyragar) +1 Damage Reduction Rating",IntId.LumAugDamageReductionRating,5,"LoyalToLordTyragar"},
     }
 }
 local recallspells = {
@@ -304,24 +307,32 @@ hud.OnRender.Add(function()
                         local prefix = auraInfo[1]
                         local cap = auraInfo[3]
                         local color = coloryellow
+                        local skip = false
     
                         if value >= cap and category == "Nalicana Auras" then
                             value = cap
                         elseif category == "Seer Auras" and auraInfo[2] ~= IntId.LumAugSkilledSpec then
                             value = math.max(0,value-5)
                         end
-    
-                        if value >= cap then
-                            color = colorgreen
-                        elseif value == 0 then
-                            color = colorred
+                        
+                        if category == "Seer Auras" then
+                            local flag = string.lower(auraInfo[4])
+                            skip = not Quest:HasQuestFlag(flag)
                         end
-    
-                        imgui.TableNextRow()
-                        imgui.TableSetColumnIndex(0)
-                        imgui.TextColored(color, prefix)
-                        imgui.TableSetColumnIndex(1)
-                        imgui.TextColored(color, value .. "/" .. cap)
+
+                        if not skip then
+                            if value >= cap then
+                                color = colorgreen
+                            elseif value == 0 then
+                                color = colorred
+                            end
+        
+                            imgui.TableNextRow()
+                            imgui.TableSetColumnIndex(0)
+                            imgui.TextColored(color, prefix)
+                            imgui.TableSetColumnIndex(1)
+                            imgui.TextColored(color, value .. "/" .. cap)
+                        end
                     end
                     imgui.EndTable()
                 end

@@ -40,7 +40,7 @@ function libQuest:IsQuestMaxSolved(queststamp)
     return false
 end
 
-function libQuest:TestQuestFlag(queststamp)
+function libQuest:HasQuestFlag(queststamp)
     local quest = self.Dictionary[queststamp]
     return quest ~= nil
 end
