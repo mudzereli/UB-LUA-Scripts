@@ -548,6 +548,15 @@ hud.OnRender.Add(function()
                                         questColor = colorgreen
                                         questString = "Complete"
                                     end
+                                elseif questType == questTypeCollectItem and Quest:IsQuestAvailable(socquestEnd) then
+                                    local questItem = socquest[5]
+                                    local questItemCount = socquest[6]
+                                    local collectedCount = game.Character.GetInventoryCount(questItem)
+                                    questString = "Started ("..collectedCount..")"
+                                    if collectedCount == questItemCount then
+                                        questColor = colorgreen
+                                        questString = "Complete ("..collectedCount..")"
+                                    end
                                 elseif questStart then
                                     if questType == questTypeKillTask then
                                         questString = "Started ("..questStart.solves..")"
