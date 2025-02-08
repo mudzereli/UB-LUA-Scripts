@@ -27,7 +27,16 @@
 - Interval between Distance Checks and Allowable Range can be changed from the UI which is accessible through the Script Hud Bar.
 
 ### FlagTracker
-- This LUA script is designed to view important one-time character flags such as Augmentations, Luminance Auras, and certain Quest Flags.
+- This LUA script is designed to view important one-time character flags such as:
+    - Augmentations
+    - Luminance Auras (Including Seer Auras)
+    - Learned Recall Spells
+    - Society Rank & Quests
+    - Skill Credit Quests
+    - Aetheria Unlocks
+    - Weekly Augmentation Gems
+    - Access Flags (Vissidal, Dark Isle, Bur, Etc)
+    - Other Flags (Luminance Unlock, Diemos Access)
 - Load the script and then open the UI from the Script Hud Bar.
 ![flagtracker_ui1](https://i.ibb.co/Nr3ryW2/image-2024-12-31-080246218.png)
 
