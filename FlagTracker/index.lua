@@ -2,7 +2,7 @@ local im = require("imgui")
 local ubviews = require("utilitybelt.views")
 local Quest = require("quests")
 local imgui = im.ImGui
-local version = "1.3.9"
+local version = "1.4.0"
 local currentHUDPosition = nil
 local defaultHUDposition = Vector2.new(500,100)
 
@@ -187,6 +187,17 @@ local societyquests = {
         {"Freebooter Phyntos Honey x10","","PhyntosHoneyComplete1109",questTypeCollectItem,"Phyntos Honey",10},
         {"Freebooter Hive Queen Kill","","KillPhyntosQueenPickup1109",questTypeCollectItem,"Phyntos Queen's Abdomen",1},
         {"Freebooter Phyntos Hive Splinters x10","","PhyntosHiveComplete1109",questTypeCollectItem,"Hive Splinter",10}
+    },
+    ["Lord"] = {
+        {"Freebooter Artifact Collection","TaskMoarsmenArtifactsStarted","TaskMoarsmenArtifactsWait",questTypeOther},
+        {"Freebooter Coral Tower Destroyer","TaskCoralTowersStarted","TaskCoralTowersWait",questTypeOther},
+        {"Freebooter High Priest of T'thuun Kill","KillTaskMoarsmanHighPriestStarted","KillTaskMoarsmanHighPriestWait",questTypeKillTask},
+        {"Freebooter Magshuth Moarsman Kill x20","KilltaskMagshuthMoarsman","KilltaskMagshuthMoarsmanWait",questTypeKillTask},
+        {"Freebooter Shoguth Moarsman Kill x40","KilltaskShoguthMoarsman","KilltaskShoguthMoarsmanWait",questTypeKillTask},
+        {"Freebooter Moguth Moarsman Kill x60","KilltaskMoguthMoarsman","KilltaskMoguthMoarsmanWait",questTypeKillTask},
+        {"Freebooter Moarsman Spawning Pools","TaskSpawnPoolsStarted","TaskSpawnPoolsWait",questTypeOther},
+        {"Freebooter Palm Fort Defended","","PalmFortDefended1209",questTypeOther},
+        {"Freebooter Supply Saboteur","","SuppliesTurnedIn1209",questTypeOther}
     }
 }
 local societyranks = {
