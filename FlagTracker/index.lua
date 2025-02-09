@@ -111,7 +111,7 @@ local recallspells = {
     {"Paradox-touched Olthoi Infested Area Recall",4198},
     {"Colosseum Recall",4213},
     {"Return to the Keep",4214},
-    {"GK: Invasion Area Camp Recall",5330},
+    {"Gear Knight Invasion Area Camp Recall",5330},
     {"Lost City of Neftet Recall",5541},
     {"Rynthid Recall",6150},
     {"Viridian Rise Recall",6321},
