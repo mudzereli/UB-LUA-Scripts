@@ -2,7 +2,7 @@ local im = require("imgui")
 local ubviews = require("utilitybelt.views")
 local Quest = require("quests")
 local imgui = im.ImGui
-local version = "1.4.3"
+local version = "1.4.4"
 local currentHUDPosition = nil
 local defaultHUDposition = Vector2.new(500,100)
 
@@ -104,7 +104,6 @@ local recallspells = {
     {"Recall Aphus Lassel",2931},
     {"Ulgrim's Recall",2941},
     {"Recall to the Singularity Caul",2943},
- --   {"Ulgrim's Recall",3856},
     {"Glenden Wood Recall",3865},
     {"Bur Recall",4084},
     {"Call of the Mhoire Forge",4128},
@@ -158,6 +157,7 @@ local questTypeOther = 0
 local questTypeKillTask = 1
 local questTypeCollectItem = 2
 local questTypeQuestTag = 3
+local questTypeMultiQuestTag = 4
 local societyquests = {
     ["Initiate"] = {
         {"GK: Parts x10","","GearknightPartsCollectionWait_0513",questTypeCollectItem,"Pile of Gearknight Parts",10},
@@ -190,12 +190,12 @@ local societyquests = {
     },
     ["Lord"] = {
         {"MC: Artifact Collection","TaskMoarsmenArtifactsStarted","TaskMoarsmenArtifactsWait",questTypeOther},
-        {"MC: Coral Tower Destroyer","TaskCoralTowersStarted","TaskCoralTowersWait",questTypeOther},
-        {"MC: High Priest of T'thuun Kill","KillTaskMoarsmanHighPriestStarted","KillTaskMoarsmanHighPriestWait",questTypeKillTask},
+        {"MC: Coral Tower Destroyer","TaskCoralTowersStarted","TaskCoralTowersWait",questTypeMultiQuestTag,{"CoralTowerBlackDead","CoralTowerBlueDead","CoralTowerGreenDead","CoralTowerRedDead","CoralTowerWhiteDead"}},
+        {"MC: High Priest of T'thuun Kill","KillTaskMoarsmanHighPriestStarted","KillTaskMoarsmanHighPriestWait",questTypeMultiQuestTag,{"HighPriestAcolyteDead","HighPriestFirstDead","HighPriestSecondDead","HighPriestThirdDead"}},
         {"MC: Magshuth Moarsman Kill x20","KilltaskMagshuthMoarsman","KilltaskMagshuthMoarsmanWait",questTypeKillTask},
         {"MC: Shoguth Moarsman Kill x40","KilltaskShoguthMoarsman","KilltaskShoguthMoarsmanWait",questTypeKillTask},
         {"MC: Moguth Moarsman Kill x60","KilltaskMoguthMoarsman","KilltaskMoguthMoarsmanWait",questTypeKillTask},
-        {"MC: Moarsman Spawning Pools","TaskSpawnPoolsStarted","TaskSpawnPoolsWait",questTypeOther},
+        {"MC: Moarsman Spawning Pools","TaskSpawnPoolsStarted","TaskSpawnPoolsWait",questTypeMultiQuestTag,{"BroodMotherZeroDead","BroodMotherOneDead","BroodMotherTwoDead","BroodMotherThreeDead"}},
         {"MC: Palm Fort Defended","","PalmFortDefended1209",questTypeOther},
         {"MC: Supply Saboteur","","SuppliesTurnedIn1209",questTypeOther}
     }
@@ -205,7 +205,7 @@ local societyranks = {
     ["Adept"] = {101,295,100},
     ["Knight"] = {301,595,150},
     ["Lord"] = {601,995,200},
-    ["Master"] = {1001,9999,0}
+    ["Master"] = {1001,9999,250}
 }
 
 local coloryellow = Vector4.new(1,1,0,1)
@@ -494,14 +494,20 @@ hud.OnRender.Add(function()
                 imgui.TableSetupColumn("Value",im.ImGuiTableColumnFlags.WidthStretch,32)
                 imgui.TableNextRow()
                 imgui.TableSetColumnIndex(0)
-                imgui.Text("# Of Ribbons for Next Rank")
+                imgui.Text("Ribbons for Next Rank")
                 imgui.TableSetColumnIndex(1)
-                imgui.TextColored(colorgreen,tostring(factionscore).."/"..tostring(nextfactionrankscore))
+                local stringFactionScore
+                if nextfactionrankscore == 9999 then
+                    stringFactionScore = "Max"
+                else 
+                    stringFactionScore = tostring(factionscore).."/"..tostring(nextfactionrankscore)
+                end
+                imgui.TextColored(colorgreen,stringFactionScore)
                 local quest = Quest.Dictionary["societyribbonsperdaycounter"]
                 if quest then
                     imgui.TableNextRow()
                     imgui.TableSetColumnIndex(0)
-                    imgui.Text("# Of Ribbons per Day (Counter)")
+                    imgui.Text("Ribbons per Day (Counter)")
                     imgui.TableSetColumnIndex(1)
                     imgui.TextColored(colorgreen,tostring(quest.solves).."/"..tostring(maxribbonsperday))
                 end
@@ -509,7 +515,7 @@ hud.OnRender.Add(function()
                 if quest then
                     imgui.TableNextRow()
                     imgui.TableSetColumnIndex(0)
-                    imgui.Text("# Of Ribbons per Day (Timer)")
+                    imgui.Text("Ribbons per Day (Timer)")
                     imgui.TableSetColumnIndex(1)
                     local questColor = colorred
                     local questStatus = Quest:GetTimeUntilExpire(quest)
@@ -522,7 +528,20 @@ hud.OnRender.Add(function()
                 if quest then
                     imgui.TableNextRow()
                     imgui.TableSetColumnIndex(0)
-                    imgui.Text("Daily Society Armor Writ")
+                    imgui.Text("Society Armor Writ")
+                    imgui.TableSetColumnIndex(1)
+                    local questColor = colorred
+                    local questStatus = Quest:GetTimeUntilExpire(quest)
+                    if questStatus == "Ready" then 
+                        questColor = colorgreen
+                    end
+                    imgui.TextColored(questColor,questStatus)
+                end
+                local quest = Quest.Dictionary["societymasterstipendcollectiontimer"]
+                if quest then
+                    imgui.TableNextRow()
+                    imgui.TableSetColumnIndex(0)
+                    imgui.Text("Society Master Stipend")
                     imgui.TableSetColumnIndex(1)
                     local questColor = colorred
                     local questStatus = Quest:GetTimeUntilExpire(quest)
@@ -563,6 +582,20 @@ hud.OnRender.Add(function()
                                         if game.Character.GetInventoryCount(startItem) > 0 then
                                             questString = "Started"
                                         end
+                                    end
+                                elseif questType == questTypeMultiQuestTag and Quest:IsQuestAvailable(socquestEnd) then
+                                    local tags = socquest[5]
+                                    local completeCount = 0
+                                    for _, tag in pairs(tags) do
+                                        if Quest:HasQuestFlag(string.lower(tag)) then
+                                            completeCount = completeCount + 1
+                                        end
+                                    end
+                                    if completeCount >= #tags then
+                                        questColor = colorgreen
+                                        questString = "Complete ("..completeCount.."/"..#tags..")"
+                                    else
+                                        questString = "Started ("..completeCount.."/"..#tags..")"
                                     end
                                 elseif questType == questTypeCollectItem and Quest:IsQuestAvailable(socquestEnd) then
                                     local questItem = socquest[5]
