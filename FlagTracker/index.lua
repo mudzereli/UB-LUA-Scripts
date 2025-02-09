@@ -2,7 +2,7 @@ local im = require("imgui")
 local ubviews = require("utilitybelt.views")
 local Quest = require("quests")
 local imgui = im.ImGui
-local version = "1.4.2"
+local version = "1.4.3"
 local currentHUDPosition = nil
 local defaultHUDposition = Vector2.new(500,100)
 
