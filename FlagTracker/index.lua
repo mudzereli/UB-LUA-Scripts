@@ -2,7 +2,7 @@ local im = require("imgui")
 local ubviews = require("utilitybelt.views")
 local Quest = require("quests")
 local imgui = im.ImGui
-local version = "1.4.0"
+local version = "1.4.1"
 local currentHUDPosition = nil
 local defaultHUDposition = Vector2.new(500,100)
 
@@ -111,7 +111,7 @@ local recallspells = {
     {"Paradox-touched Olthoi Infested Area Recall",4198},
     {"Colosseum Recall",4213},
     {"Return to the Keep",4214},
-    {"Gear Knight Invasion Area Camp Recall",5330},
+    {"GK: Invasion Area Camp Recall",5330},
     {"Lost City of Neftet Recall",5541},
     {"Rynthid Recall",6150},
     {"Viridian Rise Recall",6321},
@@ -160,44 +160,44 @@ local questTypeCollectItem = 2
 local questTypeQuestTag = 3
 local societyquests = {
     ["Initiate"] = {
-        {"Gear Knight Parts x10","","GearknightPartsCollectionWait_0513",questTypeCollectItem,"Pile of Gearknight Parts",10},
-        {"Gear Knight Phalanx Kill x10","GearknightInvasionPhalanxKilltask_0513","GearknightInvasionPhalanxKillWait_0513",questTypeKillTask},
-        {"Gear Knight Mana Siphon","GearknightInvasionHighSiphonStart_1009","GearknightInvasionHighSiphonWait_1009",questTypeQuestTag,"GearknightInvasionHighSiphonStart_1009"},
-        {"Graveyard Skeleton Jaw x8","TaskGrave1JawCollectStarted","TaskGrave1JawCollectWait",questTypeCollectItem,"Pyre Skeleton Jaw",8},
-        {"Graveyard Wight Sorcerer Kill x12","TaskGrave1WightMageKilltask","TaskGrave1WightMageWait",questTypeKillTask},
-        {"Graveyard Shambling Archivist Kill","TaskGrave1BossKillStarted","TaskGrave1BossKillWait",questTypeKillTask},
-        {"Dark Isle Vaeshok Kill","TaskDIRuschkBossKillTask","TaskDIRuschkBossKillTaskWait",questTypeKillTask},
-        {"Dark Isle Deliver Remoran Fin","","TaskDIDeliveryWait",questTypeQuestTag,"TaskDIDelivery"}
+        {"GK: Parts x10","","GearknightPartsCollectionWait_0513",questTypeCollectItem,"Pile of Gearknight Parts",10},
+        {"GK: Phalanx Kill x10","GearknightInvasionPhalanxKilltask_0513","GearknightInvasionPhalanxKillWait_0513",questTypeKillTask},
+        {"GK: Mana Siphon","GearknightInvasionHighSiphonStart_1009","GearknightInvasionHighSiphonWait_1009",questTypeQuestTag,"GearknightInvasionHighSiphonStart_1009"},
+        {"GY: Skeleton Jaw x8","TaskGrave1JawCollectStarted","TaskGrave1JawCollectWait",questTypeCollectItem,"Pyre Skeleton Jaw",8},
+        {"GY: Wight Sorcerer Kill x12","TaskGrave1WightMageKilltask","TaskGrave1WightMageWait",questTypeKillTask},
+        {"GY: Shambling Archivist Kill","TaskGrave1BossKillStarted","TaskGrave1BossKillWait",questTypeKillTask},
+        {"DI: Vaeshok Kill","TaskDIRuschkBossKillTask","TaskDIRuschkBossKillTaskWait",questTypeKillTask},
+        {"DI: Deliver Remoran Fin","","TaskDIDeliveryWait",questTypeQuestTag,"TaskDIDelivery"}
     },
     ["Adept"] = {
-        {"Dark Isle Black Coral x10","TaskDIBlackCoralStarted","TaskDIBlackCoralComplete",questTypeCollectItem,"Black Coral",10},
-        {"Dark Isle Crystal of Perception","TaskDIScoutStarted","TaskDIScoutComplete",questTypeOther},
-        {"Dark Isle Battle Reports x10","TaskDIReportStarted","TaskDIReportWait",questTypeCollectItem,"Falatacot Battle Report",10},
-        {"Graveyard Supplies to Massilor","TaskGrave2FedExStarted","TaskGrave2FedExWait",questTypeQuestTag,"TaskGrave2FedExDelivered"},
-        {"Graveyard Stone Tracing","TaskGrave2WallCarvingStarted","TaskGrave2WallCarvingWait",questTypeCollectItem,"Imprinted Archaeologist's Paper",1}
+        {"DI: Black Coral x10","TaskDIBlackCoralStarted","TaskDIBlackCoralComplete",questTypeCollectItem,"Black Coral",10},
+        {"DI: Crystal of Perception","TaskDIScoutStarted","TaskDIScoutComplete",questTypeOther},
+        {"DI: Battle Reports x10","TaskDIReportStarted","TaskDIReportWait",questTypeCollectItem,"Falatacot Battle Report",10},
+        {"GY: Supplies to Massilor","TaskGrave2FedExStarted","TaskGrave2FedExWait",questTypeQuestTag,"TaskGrave2FedExDelivered"},
+        {"GY: Stone Tracing","TaskGrave2WallCarvingStarted","TaskGrave2WallCarvingWait",questTypeCollectItem,"Imprinted Archaeologist's Paper",1}
     },
     ["Knight"] = {
-        {"Freebooter Blessed Moarsman Kill x50","TaskFreebooterMoarsmanKilltask","TaskFreebooterMoarsmanKilltaskWait",questTypeKillTask},
-        {"Freebooter Bandit Mana Boss Kill","TaskFreebooterBanditBossKill","TaskFreebooterBanditBossKillWait",questTypeKillTask},
-        {"Freebooter Glowing Jungle Lily x20","TaskFreebooterJungleLilyStarted","TaskFreebooterJungleLilyComplete",questTypeCollectItem,"Glowing Jungle Lily",20},
-        {"Freebooter Glowing Moar Gland x30","TaskFreebooterMoarGlandStarted","TaskFreebooterMoarGlandComplete",questTypeCollectItem,"Glowing Moar Gland",30},
-        {"Freebooter Killer Phyntos Wasp Kill x50","KillTaskPhyntosKiller1109","KillTaskPhyntosKillerWait1109",questTypeKillTask},
-        {"Freebooter Mana-Infused Jungle Flower x20","TaskFreebooterJungleFlowerStarted","TaskFreebooterJungleFlowerComplete",questTypeCollectItem,"Mana-Infused Jungle Flower",20},
-        {"Freebooter Phyntos Larva Kill x20","KillTaskPhyntosLarvae1109","KillTaskPhyntosLarvaeWait1109",questTypeKillTask},
-        {"Freebooter Phyntos Honey x10","","PhyntosHoneyComplete1109",questTypeCollectItem,"Phyntos Honey",10},
-        {"Freebooter Hive Queen Kill","","KillPhyntosQueenPickup1109",questTypeCollectItem,"Phyntos Queen's Abdomen",1},
-        {"Freebooter Phyntos Hive Splinters x10","","PhyntosHiveComplete1109",questTypeCollectItem,"Hive Splinter",10}
+        {"FI: Blessed Moarsman Kill x50","TaskFreebooterMoarsmanKilltask","TaskFreebooterMoarsmanKilltaskWait",questTypeKillTask},
+        {"FI: Bandit Mana Boss Kill","TaskFreebooterBanditBossKill","TaskFreebooterBanditBossKillWait",questTypeKillTask},
+        {"FI: Glowing Jungle Lily x20","TaskFreebooterJungleLilyStarted","TaskFreebooterJungleLilyComplete",questTypeCollectItem,"Glowing Jungle Lily",20},
+        {"FI: Glowing Moar Gland x30","TaskFreebooterMoarGlandStarted","TaskFreebooterMoarGlandComplete",questTypeCollectItem,"Glowing Moar Gland",30},
+        {"FI: Killer Phyntos Wasp Kill x50","KillTaskPhyntosKiller1109","KillTaskPhyntosKillerWait1109",questTypeKillTask},
+        {"FI: Mana-Infused Jungle Flower x20","TaskFreebooterJungleFlowerStarted","TaskFreebooterJungleFlowerComplete",questTypeCollectItem,"Mana-Infused Jungle Flower",20},
+        {"FI: Phyntos Larva Kill x20","KillTaskPhyntosLarvae1109","KillTaskPhyntosLarvaeWait1109",questTypeKillTask},
+        {"FI: Phyntos Honey x10","","PhyntosHoneyComplete1109",questTypeCollectItem,"Phyntos Honey",10},
+        {"FI: Hive Queen Kill","","KillPhyntosQueenPickup1109",questTypeCollectItem,"Phyntos Queen's Abdomen",1},
+        {"FI: Phyntos Hive Splinters x10","","PhyntosHiveComplete1109",questTypeCollectItem,"Hive Splinter",10}
     },
     ["Lord"] = {
-        {"Freebooter Artifact Collection","TaskMoarsmenArtifactsStarted","TaskMoarsmenArtifactsWait",questTypeOther},
-        {"Freebooter Coral Tower Destroyer","TaskCoralTowersStarted","TaskCoralTowersWait",questTypeOther},
-        {"Freebooter High Priest of T'thuun Kill","KillTaskMoarsmanHighPriestStarted","KillTaskMoarsmanHighPriestWait",questTypeKillTask},
-        {"Freebooter Magshuth Moarsman Kill x20","KilltaskMagshuthMoarsman","KilltaskMagshuthMoarsmanWait",questTypeKillTask},
-        {"Freebooter Shoguth Moarsman Kill x40","KilltaskShoguthMoarsman","KilltaskShoguthMoarsmanWait",questTypeKillTask},
-        {"Freebooter Moguth Moarsman Kill x60","KilltaskMoguthMoarsman","KilltaskMoguthMoarsmanWait",questTypeKillTask},
-        {"Freebooter Moarsman Spawning Pools","TaskSpawnPoolsStarted","TaskSpawnPoolsWait",questTypeOther},
-        {"Freebooter Palm Fort Defended","","PalmFortDefended1209",questTypeOther},
-        {"Freebooter Supply Saboteur","","SuppliesTurnedIn1209",questTypeOther}
+        {"MC: Artifact Collection","TaskMoarsmenArtifactsStarted","TaskMoarsmenArtifactsWait",questTypeOther},
+        {"MC: Coral Tower Destroyer","TaskCoralTowersStarted","TaskCoralTowersWait",questTypeOther},
+        {"MC: High Priest of T'thuun Kill","KillTaskMoarsmanHighPriestStarted","KillTaskMoarsmanHighPriestWait",questTypeKillTask},
+        {"MC: Magshuth Moarsman Kill x20","KilltaskMagshuthMoarsman","KilltaskMagshuthMoarsmanWait",questTypeKillTask},
+        {"MC: Shoguth Moarsman Kill x40","KilltaskShoguthMoarsman","KilltaskShoguthMoarsmanWait",questTypeKillTask},
+        {"MC: Moguth Moarsman Kill x60","KilltaskMoguthMoarsman","KilltaskMoguthMoarsmanWait",questTypeKillTask},
+        {"MC: Moarsman Spawning Pools","TaskSpawnPoolsStarted","TaskSpawnPoolsWait",questTypeOther},
+        {"MC: Palm Fort Defended","","PalmFortDefended1209",questTypeOther},
+        {"MC: Supply Saboteur","","SuppliesTurnedIn1209",questTypeOther}
     }
 }
 local societyranks = {
@@ -224,7 +224,7 @@ hud.OnRender.Add(function()
     if imgui.BeginTabBar("Flag Tracker Bar") then
 
         -- Augmentations Tab
-        if imgui.BeginTabItem("Augmentations") then
+        if imgui.BeginTabItem("Augs") then
             for category, augList in pairs(augmentations) do
                 imgui.Separator()
                 imgui.SetNextItemOpen(augTreeOpenStates[category] == nil or augTreeOpenStates[category])
@@ -305,7 +305,7 @@ hud.OnRender.Add(function()
         end
 
         -- Luminance Auras Tab
-        if imgui.BeginTabItem("Luminance") then
+        if imgui.BeginTabItem("Lum") then
             for category, auraList in pairs(luminanceauras) do
                 imgui.SeparatorText(category)
                 if imgui.BeginTable("Luminance Auras_"..category, 2) then
@@ -490,8 +490,8 @@ hud.OnRender.Add(function()
             end
             imgui.SeparatorText(society.." - "..societyrank)
             if imgui.BeginTable("SocietyInfo",2) then
-                imgui.TableSetupColumn("Label",im.ImGuiTableColumnFlags.WidthStretch,150)
-                imgui.TableSetupColumn("Value",im.ImGuiTableColumnFlags.WidthStretch,40)
+                imgui.TableSetupColumn("Label",im.ImGuiTableColumnFlags.WidthStretch,90)
+                imgui.TableSetupColumn("Value",im.ImGuiTableColumnFlags.WidthStretch,32)
                 imgui.TableNextRow()
                 imgui.TableSetColumnIndex(0)
                 imgui.Text("# Of Ribbons for Next Rank")
@@ -540,7 +540,7 @@ hud.OnRender.Add(function()
                     imgui.Separator()
                     if imgui.TreeNode(isocietyrank.." Quests") then
                         if imgui.BeginTable("SocietyInfo",2) then
-                            imgui.TableSetupColumn("Quest1",im.ImGuiTableColumnFlags.WidthStretch,128)
+                            imgui.TableSetupColumn("Quest1",im.ImGuiTableColumnFlags.WidthStretch,90)
                             imgui.TableSetupColumn("Status1",im.ImGuiTableColumnFlags.WidthStretch,32)
                             for socquest in questList do
                                 local socquestName = socquest[1]
@@ -564,7 +564,7 @@ hud.OnRender.Add(function()
                                     local questItemCount = socquest[6]
                                     local collectedCount = game.Character.GetInventoryCount(questItem)
                                     questString = "Started ("..collectedCount..")"
-                                    if collectedCount == questItemCount then
+                                    if collectedCount >= questItemCount then
                                         questColor = colorgreen
                                         questString = "Complete ("..collectedCount..")"
                                     end
@@ -580,7 +580,7 @@ hud.OnRender.Add(function()
                                         local questItemCount = socquest[6]
                                         local collectedCount = game.Character.GetInventoryCount(questItem)
                                         questString = "Started ("..collectedCount..")"
-                                        if collectedCount == questItemCount then
+                                        if collectedCount >= questItemCount then
                                             questColor = colorgreen
                                             questString = "Complete ("..collectedCount..")"
                                         end
