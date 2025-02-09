@@ -162,18 +162,18 @@ local societyquests = {
     ["Initiate"] = {
         {"GK: Parts x10","","GearknightPartsCollectionWait_0513",questTypeCollectItem,"Pile of Gearknight Parts",10},
         {"GK: Phalanx Kill x10","GearknightInvasionPhalanxKilltask_0513","GearknightInvasionPhalanxKillWait_0513",questTypeKillTask},
-        {"GK: Mana Siphon","GearknightInvasionHighSiphonStart_1009","GearknightInvasionHighSiphonWait_1009",questTypeQuestTag,"GearknightInvasionHighSiphonStart_1009"},
+        {"GK: Mana Siphon","","GearknightInvasionHighSiphonWait_1009",questTypeQuestTag,"GearknightInvasionHighSiphonStart_1009","Unstable Mana Stone"},
         {"GY: Skeleton Jaw x8","TaskGrave1JawCollectStarted","TaskGrave1JawCollectWait",questTypeCollectItem,"Pyre Skeleton Jaw",8},
         {"GY: Wight Sorcerer Kill x12","TaskGrave1WightMageKilltask","TaskGrave1WightMageWait",questTypeKillTask},
         {"GY: Shambling Archivist Kill","TaskGrave1BossKillStarted","TaskGrave1BossKillWait",questTypeKillTask},
         {"DI: Vaeshok Kill","TaskDIRuschkBossKillTask","TaskDIRuschkBossKillTaskWait",questTypeKillTask},
-        {"DI: Deliver Remoran Fin","","TaskDIDeliveryWait",questTypeQuestTag,"TaskDIDelivery"}
+        {"DI: Deliver Remoran Fin","","TaskDIDeliveryWait",questTypeQuestTag,"TaskDIDelivery","Altered Dark Remoran Fin"}
     },
     ["Adept"] = {
         {"DI: Black Coral x10","TaskDIBlackCoralStarted","TaskDIBlackCoralComplete",questTypeCollectItem,"Black Coral",10},
         {"DI: Crystal of Perception","TaskDIScoutStarted","TaskDIScoutComplete",questTypeOther},
         {"DI: Battle Reports x10","TaskDIReportStarted","TaskDIReportWait",questTypeCollectItem,"Falatacot Battle Report",10},
-        {"GY: Supplies to Massilor","TaskGrave2FedExStarted","TaskGrave2FedExWait",questTypeQuestTag,"TaskGrave2FedExDelivered"},
+        {"GY: Supplies to Massilor","","TaskGrave2FedExWait",questTypeQuestTag,"TaskGrave2FedExDelivered","Supplies for Massilor"},
         {"GY: Stone Tracing","TaskGrave2WallCarvingStarted","TaskGrave2WallCarvingWait",questTypeCollectItem,"Imprinted Archaeologist's Paper",1}
     },
     ["Knight"] = {
@@ -548,7 +548,7 @@ hud.OnRender.Add(function()
                                 local socquestEnd = string.lower(socquest[3])
                                 local questType = socquest[4]
                                 local questColor = coloryellow
-                                local questString = "Unknown"
+                                local questString = "Ready"
                                 imgui.TableNextRow()
                                 local questStart = Quest.Dictionary[socquestStart]
                                 local questEnd = Quest.Dictionary[socquestEnd]
@@ -558,6 +558,11 @@ hud.OnRender.Add(function()
                                     if completeQuest then
                                         questColor = colorgreen
                                         questString = "Complete"
+                                    else
+                                        local startItem = socquest[6]
+                                        if game.Character.GetInventoryCount(startItem) > 0 then
+                                            questString = "Started"
+                                        end
                                     end
                                 elseif questType == questTypeCollectItem and Quest:IsQuestAvailable(socquestEnd) then
                                     local questItem = socquest[5]
