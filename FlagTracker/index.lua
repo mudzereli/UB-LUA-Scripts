@@ -2,7 +2,7 @@ local im = require("imgui")
 local ubviews = require("utilitybelt.views")
 local Quest = require("quests")
 local imgui = im.ImGui
-local version = "1.4.1"
+local version = "1.4.2"
 local currentHUDPosition = nil
 local defaultHUDposition = Vector2.new(500,100)
 
@@ -575,6 +575,8 @@ hud.OnRender.Add(function()
                                             questColor = colorgreen
                                             questString = "Complete ("..questStart.solves..")"
                                         end
+                                    elseif questType == questTypeOther then
+                                        questString = "Started"
                                     elseif questType == questTypeCollectItem then
                                         local questItem = socquest[5]
                                         local questItemCount = socquest[6]
