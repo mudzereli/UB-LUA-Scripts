@@ -2,7 +2,7 @@ local im = require("imgui")
 local ubviews = require("utilitybelt.views")
 local Quest = require("quests")
 local imgui = im.ImGui
-local version = "1.4.4"
+local version = "1.5.0"
 local currentHUDPosition = nil
 local defaultHUDposition = Vector2.new(500,100)
 
@@ -207,6 +207,46 @@ local societyranks = {
     ["Lord"] = {601,995,200},
     ["Master"] = {1001,9999,250}
 }
+local fachubquests = {
+    ["Level 10"] = {
+        {"Glenden Wood","fachubglendenwood"},
+        {"Folthid Estate","fachubfolthid"},
+        {"Mosswart Camp","fachubmosswartcamp"}
+    },
+    ["Level 15"] = {
+        {"Green Mire Grave","fachubgreenmiregrave"},
+        {"Colier","fachubcolier"},
+        {"Halls of Helm","fachubhallsofhelm"}
+    },
+    ["Level 20"] = {
+        {"Dangerous Cave","fachubdangerouscatacombs"},
+        {"Trothyr's Rest","fachubtrothyrsrest"},
+        {"Hunter's Leap","fachubhuntersleap"}
+    },
+    ["Level 25"] = {
+        {"Fledgemaster's Camp","fachubfledgemasterscamp"},
+        {"Eastham Portals","fachubeastham","fachubeasthamportals_flag"},
+        {"Catacombs of the Forgotten","fachubcatacombs"}
+    },
+    ["Level 30"] = {
+        {"Mountain Sewer","fachubmountainsewer"},
+        {"Mite Maze","fachubmitemaze"},
+        {"Haunted Mansion","fachubhauntedmansion"}
+    },
+    ["Level 35"] = {
+        {"Suntik","fachubsuntik"},
+        {"Banderling Camp","fachubbanderlingcamp"},
+        {"Skeleton Fort","fachubskeletonfort"}
+    },
+    ["Level 40"] = {
+        {"Bellig Tower","fachubbellig"},
+        {"Castle of Baron Nuvillus","fachubcastle"},
+        {"Dryreach","fachubdryreach"}
+    },
+    ["Level 45"] = {
+        {"Blackmire","fachubblackmire"}
+    }
+}
 
 local coloryellow = Vector4.new(1,1,0,1)
 local colorred = Vector4.new(1,0,0,1)
@@ -305,7 +345,7 @@ hud.OnRender.Add(function()
         end
 
         -- Luminance Auras Tab
-        if imgui.BeginTabItem("Lum") then
+        if Quest:HasQuestFlag("oracleluminancerewardsaccess_1110") and imgui.BeginTabItem("Lum") then
             for category, auraList in pairs(luminanceauras) do
                 imgui.SeparatorText(category)
                 if imgui.BeginTable("Luminance Auras_"..category, 2) then
@@ -376,88 +416,11 @@ hud.OnRender.Add(function()
             end
             imgui.EndTabItem()
         end
-
-        -- Character Flags Tab
-        if imgui.BeginTabItem("Flags") then
-            for category, flagInfo in pairs(characterflags) do
-                imgui.Separator()
-                imgui.SetNextItemOpen(characterflagTreeOpenStates[category] == nil or characterflagTreeOpenStates[category])
-                local isTreeNodeOpen = imgui.TreeNode(category)
-                characterflagTreeOpenStates[category] = isTreeNodeOpen
-                if isTreeNodeOpen then
-                    if imgui.BeginTable("Character Flags_"..category, 2) then
-                        imgui.TableSetupColumn("Flag 1",im.ImGuiTableColumnFlags.WidthStretch,256)
-                        imgui.TableSetupColumn("Flag 1 Points",im.ImGuiTableColumnFlags.WidthStretch,32)
-                            for _, flag in ipairs(flagInfo) do
-                                imgui.TableNextRow()
-                                imgui.TableSetColumnIndex(0)
-                                imgui.TableSetColumnIndex(1)
-                                local type = flag[1]
-                                local prefix
-                                local cap
-                                local value = 0
-                                if type == typeQuest then
-                                    prefix = flag[2]
-                                    cap = flag[4]
-                                    local queststamp = flag[3]
-                                    local questfield = flag[5]
-                                    local quest = Quest.Dictionary[queststamp]
-                                    if quest ~= nil then
-                                        if questfield == 3 then
-                                            if not Quest:IsQuestAvailable(queststamp) then
-                                                value = 1
-                                            end
-                                        else
-                                            value = (tonumber(quest.solves) or 0)
-                                        end
-                                    end
-                                elseif type == typeAetheria then
-                                    prefix = flag[2]
-                                    local bitreq = flag[4]
-                                    local bitfield = flag[3]
-                                    ---@diagnostic disable-next-line
-                                    local bitvalue = char.Value(bitfield)
-                                    if bitvalue >= bitreq then
-                                        value = 1
-                                    end 
-                                    cap = 1
-                                end
-                                local color = coloryellow
-                                if value >= cap then
-                                    color = colorgreen
-                                elseif value == 0 then
-                                    color = colorred
-                                end
-                                local completionString = "Yes"
-                                if category == "Additional Skill Credits" then
-                                    completionString = tostring(value) .. "/" .. tostring(cap)
-                                elseif category == "Augmentation Gems" then
-                                    local queststamp = flag[3]
-                                    local quest = Quest.Dictionary[queststamp]
-                                    if quest == nil then 
-                                        completionString = "Augs"
-                                    else
-                                        completionString = Quest:FormatSeconds(quest.expiretime-os.time())
-                                    end
-                                elseif value < cap then
-                                    completionString = "No"
-                                end
-                                imgui.TableNextRow()
-                                imgui.TableSetColumnIndex(0)
-                                imgui.TextColored(color, prefix)
-                                imgui.TableSetColumnIndex(1)
-                                imgui.TextColored(color, completionString)
-                            end
-                        imgui.EndTable()
-                    end
-                    imgui.TreePop()
-                end
-            end
-            imgui.EndTabItem()
-        end
         
         -- Society Tab
-        if game.Character.Weenie.IntValues[IntId.Faction1Bits] ~= nil and imgui.BeginTabItem("Society") then
+        if game.Character.Weenie.IntValues[IntId.Faction1Bits] ~= nil
+                and game.Character.Weenie.IntValues[IntId.Faction1Bits] ~= 0 
+                and imgui.BeginTabItem("Society") then
             if imgui.Button("Refresh Quests") then
                 Quest:Refresh()
             end
@@ -642,6 +605,140 @@ hud.OnRender.Add(function()
                         end
                         imgui.TreePop()
                     end
+                end
+            end
+            imgui.EndTabItem()
+        end
+
+        -- Fachub Tab
+        if imgui.BeginTabItem("FacHub") then
+            if imgui.Button("Refresh Quests") then
+                Quest:Refresh()
+            end
+            imgui.TextDisabled("[F] = Flagged / [X] = Completed / [U] = Unknown")
+            for minLevel, fhquests in pairs(fachubquests) do
+                --imgui.SeparatorText(minLevel.." Quests")
+                imgui.Separator()
+                if imgui.TreeNode(minLevel.." Quests") then
+                    local columnIndex = 0
+                    if imgui.BeginTable(minLevel.." Quests",6) then
+                        imgui.TableSetupColumn(minLevel.." Quest1",im.ImGuiTableColumnFlags.WidthStretch)
+                        imgui.TableSetupColumn(minLevel.." Quest2",im.ImGuiTableColumnFlags.WidthStretch)
+                        imgui.TableSetupColumn(minLevel.." Quest3",im.ImGuiTableColumnFlags.WidthStretch)
+                        for _, fhquest in pairs(fhquests) do
+                            local fhquestName = fhquest[1]
+                            local fhquestCompleted = fhquest[2]
+                            local fhquestStarted = fhquest[3]
+                            if not fhquestStarted then
+                                fhquestStarted = fhquestCompleted.."portal_flag"
+                            end
+                            if columnIndex == 0 then
+                                imgui.TableNextRow()
+                            end
+                            local stringFHCompleted
+                            local colorQuest
+                            if Quest:HasQuestFlag(fhquestCompleted) then
+                                stringFHCompleted = "X"
+                                colorQuest = colorgreen
+                            elseif Quest:HasQuestFlag(fhquestStarted) then
+                                stringFHCompleted = "F"
+                                colorQuest = coloryellow
+                            else 
+                                stringFHCompleted = "U"
+                                colorQuest = colorred
+                            end
+                            imgui.TableSetColumnIndex(columnIndex)
+                            imgui.TextColored(colorQuest,"["..stringFHCompleted.."] "..fhquestName)
+                            columnIndex = columnIndex + 1
+                            if columnIndex >= 3 then
+                                columnIndex = 0
+                            end
+                        end
+                        imgui.EndTable()
+                    end
+                    imgui.TreePop()
+                end
+            end
+            imgui.EndTabItem()
+        end
+
+        -- Character Flags Tab
+        if imgui.BeginTabItem("Flags") then
+            for category, flagInfo in pairs(characterflags) do
+                imgui.Separator()
+                imgui.SetNextItemOpen(characterflagTreeOpenStates[category] == nil or characterflagTreeOpenStates[category])
+                local isTreeNodeOpen = imgui.TreeNode(category)
+                characterflagTreeOpenStates[category] = isTreeNodeOpen
+                if isTreeNodeOpen then
+                    if imgui.BeginTable("Character Flags_"..category, 2) then
+                        imgui.TableSetupColumn("Flag 1",im.ImGuiTableColumnFlags.WidthStretch,128)
+                        imgui.TableSetupColumn("Flag 1 Points",im.ImGuiTableColumnFlags.WidthStretch,32)
+                            for _, flag in ipairs(flagInfo) do
+                                imgui.TableNextRow()
+                                imgui.TableSetColumnIndex(0)
+                                imgui.TableSetColumnIndex(1)
+                                local type = flag[1]
+                                local prefix
+                                local cap
+                                local value = 0
+                                if type == typeQuest then
+                                    prefix = flag[2]
+                                    cap = flag[4]
+                                    local queststamp = flag[3]
+                                    local questfield = flag[5]
+                                    local quest = Quest.Dictionary[queststamp]
+                                    if quest ~= nil then
+                                        if questfield == 3 then
+                                            if not Quest:IsQuestAvailable(queststamp) then
+                                                value = 1
+                                            end
+                                        else
+                                            value = (tonumber(quest.solves) or 0)
+                                        end
+                                    end
+                                elseif type == typeAetheria then
+                                    prefix = flag[2]
+                                    local bitreq = flag[4]
+                                    local bitfield = flag[3]
+                                    ---@diagnostic disable-next-line
+                                    local bitvalue = char.Value(bitfield)
+                                    if bitvalue >= bitreq then
+                                        value = 1
+                                    end 
+                                    cap = 1
+                                end
+                                local color = coloryellow
+                                if value >= cap then
+                                    color = colorgreen
+                                elseif value == 0 then
+                                    color = colorred
+                                end
+                                local completionString = "Yes"
+                                if category == "Additional Skill Credits" then
+                                    completionString = tostring(value) .. "/" .. tostring(cap)
+                                elseif category == "Augmentation Gems" then
+                                    local queststamp = flag[3]
+                                    local quest = Quest.Dictionary[queststamp]
+                                    if quest == nil then 
+                                        completionString = "Augs"
+                                    else
+                                        completionString = Quest:GetTimeUntilExpire(quest)
+                                        if completionString == "Ready" then
+                                            color = coloryellow
+                                        end
+                                    end
+                                elseif value < cap then
+                                    completionString = "No"
+                                end
+                                imgui.TableNextRow()
+                                imgui.TableSetColumnIndex(0)
+                                imgui.TextColored(color, prefix)
+                                imgui.TableSetColumnIndex(1)
+                                imgui.TextColored(color, completionString)
+                            end
+                        imgui.EndTable()
+                    end
+                    imgui.TreePop()
                 end
             end
             imgui.EndTabItem()
