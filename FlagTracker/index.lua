@@ -2,10 +2,18 @@ local im = require("imgui")
 local ubviews = require("utilitybelt.views")
 local Quest = require("quests")
 local imgui = im.ImGui
-local version = "1.5.0"
+local version = "1.5.1"
 local currentHUDPosition = nil
 local defaultHUDposition = Vector2.new(500,100)
 
+local settings = {
+    showLuminance = true,
+    showRecallSpells = true,
+    showSociety=true,
+    showFacHub=false,
+    showQuests=false,
+    showFlags=true
+}
 local augmentations = {
     ["Death Augs"] = {
         {"Keep Items",IntId.AugmentationLessDeathItemLoss,3,"Rohula bint Ludun","Ayan Baqur"},
@@ -394,8 +402,9 @@ hud.OnRender.Add(function()
         -- Recall Spells Tab
         if imgui.BeginTabItem("Recalls") then
             if imgui.BeginTable("Recall Spells",2) then
-                imgui.TableSetupColumn("RecallColumn1",im.ImGuiTableColumnFlags.WidthStretch,128)
-                imgui.TableSetupColumn("RecallColumn2",im.ImGuiTableColumnFlags.WidthStretch,32)
+                imgui.TableSetupColumn("Recall Spell",im.ImGuiTableColumnFlags.WidthStretch,128)
+                imgui.TableSetupColumn("Status",im.ImGuiTableColumnFlags.WidthStretch,32)
+                imgui.TableHeadersRow()
                 for _,recallInfo in ipairs(recallspells) do
                     local spellName = recallInfo[1]
                     local spellID = recallInfo[2]
@@ -546,7 +555,7 @@ hud.OnRender.Add(function()
                                             questString = "Started"
                                         end
                                     end
-                                elseif questType == questTypeMultiQuestTag and Quest:IsQuestAvailable(socquestEnd) then
+                                elseif questType == questTypeMultiQuestTag and Quest:IsQuestAvailable(socquestEnd) and Quest:HasQuestFlag(socquestStart) then
                                     local tags = socquest[5]
                                     local completeCount = 0
                                     for _, tag in pairs(tags) do
@@ -611,7 +620,7 @@ hud.OnRender.Add(function()
         end
 
         -- Fachub Tab
-        if imgui.BeginTabItem("FacHub") then
+        if settings.showFacHub and imgui.BeginTabItem("FacHub") then
             if imgui.Button("Refresh Quests") then
                 Quest:Refresh()
             end
@@ -664,6 +673,9 @@ hud.OnRender.Add(function()
 
         -- Character Flags Tab
         if imgui.BeginTabItem("Flags") then
+            if imgui.Button("Refresh Quests") then
+                Quest:Refresh()
+            end
             for category, flagInfo in pairs(characterflags) do
                 imgui.Separator()
                 imgui.SetNextItemOpen(characterflagTreeOpenStates[category] == nil or characterflagTreeOpenStates[category])
@@ -745,7 +757,7 @@ hud.OnRender.Add(function()
         end
 
         -- General Quests Tab
-        if imgui.BeginTabItem("Quests") then
+        if settings.showQuests and imgui.BeginTabItem("Quests") then
             if imgui.Button("Refresh Quests") then
                 Quest:Refresh()
             end
@@ -820,6 +832,18 @@ hud.OnRender.Add(function()
             imgui.EndTabItem()
         end
         
+        -- Settings Tab
+        if imgui.BeginTabItem("Settings") then
+            imgui.SeparatorText("Tab Visibility")
+            if imgui.Checkbox("Show Fac Hub",settings.showFacHub) then
+                settings.showFacHub = not settings.showFacHub
+            end
+            if imgui.Checkbox("Show Quests",settings.showQuests) then
+                settings.showQuests = not settings.showQuests
+            end
+            imgui.EndTabItem()
+        end
+
         imgui.EndTabBar()
     end
 
