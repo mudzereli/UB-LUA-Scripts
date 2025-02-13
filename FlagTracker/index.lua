@@ -2,9 +2,14 @@ local im = require("imgui")
 local ubviews = require("utilitybelt.views")
 local Quest = require("quests")
 local imgui = im.ImGui
-local version = "1.5.1"
+local version = "1.6.0"
 local currentHUDPosition = nil
 local defaultHUDposition = Vector2.new(500,100)
+
+local colorwhite = Vector4.new(1,1,1,1)
+local coloryellow = Vector4.new(1,1,0,1)
+local colorred = Vector4.new(1,0,0,1)
+local colorgreen = Vector4.new(0,1,0,1)
 
 local settings = {
     showLuminance = true,
@@ -255,10 +260,95 @@ local fachubquests = {
         {"Blackmire","fachubblackmire"}
     }
 }
+local cantripmap = {
+    ["Specialized Skills"] = {},
+    ["Trained Skills"] = {},
+    ["Attributes"] = {
+        ["Strength"] = { value = "N/A", color = colorwhite},
+        ["Endurance"] = { value = "N/A", color = colorwhite},
+        ["Coordination"] = { value = "N/A", color = colorwhite},
+        ["Quickness"] = { value = "N/A", color = colorwhite},
+        ["Focus"] = { value = "N/A", color = colorwhite},
+        ["Willpower"] = { value = "N/A", color = colorwhite}
+    },
+    ["Protection Auras"] = {
+        ["Armor"] = { value = "N/A", color = Vector4.new(0.6, 0.6, 0.6, 1) }, -- Light Gray
+        ["Bludgeoning Ward"] = { value = "N/A", color = Vector4.new(0.7, 0.7, 0.7, 1) }, -- Soft Gray
+        ["Piercing Ward"] = { value = "N/A", color = Vector4.new(1, 1, 0.5, 1) }, -- Pastel Yellow
+        ["Slashing Ward"] = { value = "N/A", color = Vector4.new(1, 0.7, 0.4, 1) }, -- Pastel Orange
+        ["Flame Ward"] = { value = "N/A", color = Vector4.new(1, 0.5, 0.5, 1) }, -- Soft Red
+        ["Frost Ward"] = { value = "N/A", color = Vector4.new(0.5, 0.7, 1, 1) }, -- Pastel Blue
+        ["Acid Ward"] = { value = "N/A", color = Vector4.new(0.5, 1, 0.5, 1) }, -- Soft Green
+        ["Storm Ward"] = { value = "N/A", color = Vector4.new(0.8, 0.5, 1, 1) } -- Pastel Purple
+    }
+}
+local cantriptypes = {
+    ["N/A"] = Vector4.new(0.7, 0.7, 0.7, 1), -- Lighter Gray
+    ["Minor"] = Vector4.new(1, 1, 1, 1), -- White (still fine)
+    ["Moderate"] = Vector4.new(0.3, 1, 0.3, 1), -- Softer Green
+    ["Major"] = Vector4.new(0.3, 0.6, 1, 1), -- Lighter Blue
+    ["Epic"] = Vector4.new(0.8, 0.3, 1, 1), -- Brighter Purple
+    ["Legendary"] = Vector4.new(1, 0.7, 0.2, 1) -- Softer Orange    
+}
+local skillcantripreplacements = {
+    [SkillId.MagicDefense] = "MagicResistance",
+    [SkillId.MeleeDefense] = "Invulnerability"
+}
 
-local coloryellow = Vector4.new(1,1,0,1)
-local colorred = Vector4.new(1,0,0,1)
-local colorgreen = Vector4.new(0,1,0,1)
+local function RefreshCantrips() 
+    for id, sk in pairs(game.Character.Weenie.Skills) do
+        local skillName = skillcantripreplacements[id]
+        if skillName == nil then
+            skillName = tostring(id)
+        end
+        if sk.Training == SkillTrainingType.Specialized then
+            cantripmap["Specialized Skills"][skillName] = {value = "N/A", color = colorwhite}
+        end
+        if sk.Training == SkillTrainingType.Trained then
+            cantripmap["Trained Skills"][skillName] = {value = "N/A", color = colorwhite}
+        end
+    end
+    for ward, _ in pairs(cantripmap["Protection Auras"]) do
+        cantripmap["Protection Auras"][ward].value = "N/A"
+    end
+    for attr, _ in pairs(cantripmap["Attributes"]) do
+        cantripmap["Attributes"][attr].value = "N/A"
+    end
+    for _, e in ipairs(game.Character.ActiveEnchantments()) do
+        --- @type Enchantment
+        local ench = e
+        --- @type Spell
+        local spell = game.Character.SpellBook.Get(ench.SpellId)
+        if spell then
+            for type, _ in pairs(cantriptypes) do
+                for ward, _ in pairs(cantripmap["Protection Auras"]) do
+                    local matchstring = type .. " " .. ward
+                    if spell.Name == matchstring then
+                        cantripmap["Protection Auras"][ward].value = type
+                    end
+                end
+                for skill, _ in pairs(cantripmap["Specialized Skills"]) do
+                    local matchstring = type .. skill
+                    if string.find(spell.Name:gsub("%s+",""),matchstring) then
+                        cantripmap["Specialized Skills"][skill].value = type
+                    end
+                end
+                for skill, _ in pairs(cantripmap["Trained Skills"]) do
+                    local matchstring = type .. skill
+                    if string.find(spell.Name:gsub("%s+",""),matchstring) then
+                        cantripmap["Trained Skills"][skill].value = type
+                    end
+                end
+                for attribute, _ in pairs(cantripmap["Attributes"]) do
+                    local matchstring = type .. attribute
+                    if string.find(spell.Name:gsub("%s+",""),matchstring) then
+                        cantripmap["Attributes"][attribute].value = type
+                    end
+                end
+            end
+        end
+    end
+end
 
 print("[LUA]: Loading FlagTracker v"..version)
 
@@ -756,6 +846,37 @@ hud.OnRender.Add(function()
             imgui.EndTabItem()
         end
 
+        --[[
+            TO DO:
+            - Stats -- map Self > Willpower
+            - Regen Auras
+            - Other Stuff?
+        ]]--
+        if imgui.BeginTabItem("Cantrips") then
+            if imgui.Button("Refresh") then
+                RefreshCantrips()
+            end
+            for cantripgroup, cantrips in pairs(cantripmap) do
+                imgui.Separator()
+                if imgui.TreeNode(cantripgroup) then
+                    if imgui.BeginTable(cantripgroup,2) then
+                        imgui.TableSetupColumn(cantripgroup,im.ImGuiTableColumnFlags.WidthStretch,64)
+                        imgui.TableSetupColumn("Status",im.ImGuiTableColumnFlags.WidthStretch,32)
+                        for effect, info in pairs(cantrips) do
+                            imgui.TableNextRow()
+                            imgui.TableSetColumnIndex(0)
+                            imgui.TextColored(info.color, effect)
+                            imgui.TableSetColumnIndex(1)
+                            imgui.TextColored(cantriptypes[info.value], info.value)
+                        end
+                        imgui.EndTable()
+                    end
+                    imgui.TreePop()
+                end
+            end
+            imgui.EndTabItem()
+        end
+
         -- General Quests Tab
         if settings.showQuests and imgui.BeginTabItem("Quests") then
             if imgui.Button("Refresh Quests") then
@@ -856,3 +977,4 @@ end)
 hud.Visible = true
 
 Quest:Refresh()
+RefreshCantrips()
