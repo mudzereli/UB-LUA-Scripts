@@ -2,14 +2,16 @@ local im = require("imgui")
 local ubviews = require("utilitybelt.views")
 local Quest = require("quests")
 local imgui = im.ImGui
-local version = "1.6.0"
+local version = "1.6.1"
 local currentHUDPosition = nil
 local defaultHUDposition = Vector2.new(500,100)
+local textures = {}
 
 local colorwhite = Vector4.new(1,1,1,1)
 local coloryellow = Vector4.new(1,1,0,1)
 local colorred = Vector4.new(1,0,0,1)
 local colorgreen = Vector4.new(0,1,0,1)
+local iconVectorSize = Vector2.new(16,16)
 
 local settings = {
     showLuminance = true,
@@ -264,22 +266,22 @@ local cantripmap = {
     ["Specialized Skills"] = {},
     ["Trained Skills"] = {},
     ["Attributes"] = {
-        ["Strength"] = { value = "N/A", color = colorwhite},
-        ["Endurance"] = { value = "N/A", color = colorwhite},
-        ["Coordination"] = { value = "N/A", color = colorwhite},
-        ["Quickness"] = { value = "N/A", color = colorwhite},
-        ["Focus"] = { value = "N/A", color = colorwhite},
-        ["Willpower"] = { value = "N/A", color = colorwhite}
+        ["Strength"] = { value = "N/A", color = colorwhite, spellIcon = SpellId.StrengthSelf8, iconBackground = 0x060013F9},
+        ["Endurance"] = { value = "N/A", color = colorwhite, spellIcon = SpellId.EnduranceSelf8, iconBackground = 0x060013F9},
+        ["Coordination"] = { value = "N/A", color = colorwhite, spellIcon = SpellId.CoordinationSelf8, iconBackground = 0x060013F9},
+        ["Quickness"] = { value = "N/A", color = colorwhite, spellIcon = SpellId.QuicknessSelf8, iconBackground = 0x060013F9},
+        ["Focus"] = { value = "N/A", color = colorwhite, spellIcon = SpellId.FocusSelf8, iconBackground = 0x060013F9},
+        ["Willpower"] = { value = "N/A", color = colorwhite, spellIcon = SpellId.WillpowerSelf8, iconBackground = 0x060013F9}
     },
     ["Protection Auras"] = {
-        ["Armor"] = { value = "N/A", color = Vector4.new(0.6, 0.6, 0.6, 1) }, -- Light Gray
-        ["Bludgeoning Ward"] = { value = "N/A", color = Vector4.new(0.7, 0.7, 0.7, 1) }, -- Soft Gray
-        ["Piercing Ward"] = { value = "N/A", color = Vector4.new(1, 1, 0.5, 1) }, -- Pastel Yellow
-        ["Slashing Ward"] = { value = "N/A", color = Vector4.new(1, 0.7, 0.4, 1) }, -- Pastel Orange
-        ["Flame Ward"] = { value = "N/A", color = Vector4.new(1, 0.5, 0.5, 1) }, -- Soft Red
-        ["Frost Ward"] = { value = "N/A", color = Vector4.new(0.5, 0.7, 1, 1) }, -- Pastel Blue
-        ["Acid Ward"] = { value = "N/A", color = Vector4.new(0.5, 1, 0.5, 1) }, -- Soft Green
-        ["Storm Ward"] = { value = "N/A", color = Vector4.new(0.8, 0.5, 1, 1) } -- Pastel Purple
+        ["Armor"] = { value = "N/A", color = Vector4.new(0.6, 0.6, 0.6, 1), spellIcon = SpellId.ArmorSelf8}, -- Light Gray
+        ["Bludgeoning Ward"] = { value = "N/A", color = Vector4.new(0.7, 0.7, 0.7, 1), spellIcon = SpellId.BludgeonProtectionSelf8}, -- Soft Gray
+        ["Piercing Ward"] = { value = "N/A", color = Vector4.new(1, 1, 0.5, 1), spellIcon = SpellId.PiercingProtectionSelf8}, -- Pastel Yellow
+        ["Slashing Ward"] = { value = "N/A", color = Vector4.new(1, 0.7, 0.4, 1), spellIcon = SpellId.BladeProtectionSelf8}, -- Pastel Orange
+        ["Flame Ward"] = { value = "N/A", color = Vector4.new(1, 0.5, 0.5, 1), spellIcon = SpellId.FireProtectionSelf8}, -- Soft Red
+        ["Frost Ward"] = { value = "N/A", color = Vector4.new(0.5, 0.7, 1, 1), spellIcon = SpellId.ColdProtectionSelf8}, -- Pastel Blue
+        ["Acid Ward"] = { value = "N/A", color = Vector4.new(0.5, 1, 0.5, 1), spellIcon = SpellId.AcidProtectionSelf8}, -- Soft Green
+        ["Storm Ward"] = { value = "N/A", color = Vector4.new(0.8, 0.5, 1, 1), spellIcon = SpellId.LightningProtectionSelf8} -- Pastel Purple
     }
 }
 local cantriptypes = {
@@ -295,6 +297,20 @@ local skillcantripreplacements = {
     [SkillId.MeleeDefense] = "Invulnerability"
 }
 
+local function GetOrCreateTexture(iconID)
+    local preloadedTexture = textures[iconID]
+    if not preloadedTexture then
+        local texture = ubviews.Huds.GetIconTexture(iconID)
+        if texture then
+            textures[iconID] = texture
+            return texture
+        end
+    else
+        return preloadedTexture
+    end
+    return ubviews.Huds.GetIconTexture(0x0600109A)
+end
+
 local function RefreshCantrips() 
     for id, sk in pairs(game.Character.Weenie.Skills) do
         local skillName = skillcantripreplacements[id]
@@ -302,10 +318,10 @@ local function RefreshCantrips()
             skillName = tostring(id)
         end
         if sk.Training == SkillTrainingType.Specialized then
-            cantripmap["Specialized Skills"][skillName] = {value = "N/A", color = colorwhite}
+            cantripmap["Specialized Skills"][skillName] = {value = "N/A", color = colorwhite, icon = sk.Dat.IconId}
         end
         if sk.Training == SkillTrainingType.Trained then
-            cantripmap["Trained Skills"][skillName] = {value = "N/A", color = colorwhite}
+            cantripmap["Trained Skills"][skillName] = {value = "N/A", color = colorwhite, icon = sk.Dat.IconId}
         end
     end
     for ward, _ in pairs(cantripmap["Protection Auras"]) do
@@ -394,10 +410,10 @@ hud.OnRender.Add(function()
 
                             local skip = (category == "Stat Augs" and char.Value(IntId.AugmentationInnateFamily) == 10 and value == 0) 
                                       or (category == "Resistance Augs" and char.Value(IntId.AugmentationResistanceFamily) == 2 and value == 0)
-                                      or (augID == IntId.AugmentationSpecializeMagicItemTinkering and game.Character.Weenie.Skills[SkillId.MagicItemTinkering].Training == SkillTrainingType.Untrained)
-                                      or (augID == IntId.AugmentationSpecializeWeaponTinkering and game.Character.Weenie.Skills[SkillId.WeaponTinkering].Training == SkillTrainingType.Untrained)
-                                      or (augID == IntId.AugmentationSpecializeArmorTinkering and game.Character.Weenie.Skills[SkillId.ArmorTinkering].Training == SkillTrainingType.Untrained)
-                                      or (augID == IntId.AugmentationSpecializeItemTinkering and game.Character.Weenie.Skills[SkillId.ItemTinkering].Training == SkillTrainingType.Untrained)
+                                      or (augID == IntId.AugmentationSpecializeMagicItemTinkering and char.Skills[SkillId.MagicItemTinkering].Training == SkillTrainingType.Untrained)
+                                      or (augID == IntId.AugmentationSpecializeWeaponTinkering and char.Skills[SkillId.WeaponTinkering].Training == SkillTrainingType.Untrained)
+                                      or (augID == IntId.AugmentationSpecializeArmorTinkering and char.Skills[SkillId.ArmorTinkering].Training == SkillTrainingType.Untrained)
+                                      or (augID == IntId.AugmentationSpecializeItemTinkering and char.Skills[SkillId.ItemTinkering].Training == SkillTrainingType.Untrained)
 
                             if not skip then
                                 local color = coloryellow
@@ -517,13 +533,13 @@ hud.OnRender.Add(function()
         end
         
         -- Society Tab
-        if game.Character.Weenie.IntValues[IntId.Faction1Bits] ~= nil
-                and game.Character.Weenie.IntValues[IntId.Faction1Bits] ~= 0 
+        if char.IntValues[IntId.Faction1Bits] ~= nil
+                and char.IntValues[IntId.Faction1Bits] ~= 0 
                 and imgui.BeginTabItem("Society") then
             if imgui.Button("Refresh Quests") then
                 Quest:Refresh()
             end
-            local factionbits = game.Character.Weenie.IntValues[IntId.Faction1Bits]
+            local factionbits = char.IntValues[IntId.Faction1Bits]
             local factionscore = 0
             local nextfactionrankscore = 0
             local society = ""
@@ -532,13 +548,13 @@ hud.OnRender.Add(function()
             -- Determine Which Society
             if factionbits == 1 then
                 society = "Celestial Hand"
-                factionscore = game.Character.Weenie.IntValues[IntId.SocietyRankCelhan]
+                factionscore = char.IntValues[IntId.SocietyRankCelhan]
             elseif factionbits == 2 then
                 society = "Edlrytch Web"
-                factionscore = game.Character.Weenie.IntValues[IntId.SocietyRankEldweb]
+                factionscore = char.IntValues[IntId.SocietyRankEldweb]
             elseif factionbits == 4 then
                 society = "Radiant Blood"
-                factionscore = game.Character.Weenie.IntValues[IntId.SocietyRankRadblo]
+                factionscore = char.IntValues[IntId.SocietyRankRadblo]
             end
             -- Determine Society Rank
             for isocietyrank, thresholds in pairs(societyranks) do
@@ -846,12 +862,6 @@ hud.OnRender.Add(function()
             imgui.EndTabItem()
         end
 
-        --[[
-            TO DO:
-            - Stats -- map Self > Willpower
-            - Regen Auras
-            - Other Stuff?
-        ]]--
         if imgui.BeginTabItem("Cantrips") then
             if imgui.Button("Refresh") then
                 RefreshCantrips()
@@ -863,8 +873,39 @@ hud.OnRender.Add(function()
                         imgui.TableSetupColumn(cantripgroup,im.ImGuiTableColumnFlags.WidthStretch,64)
                         imgui.TableSetupColumn("Status",im.ImGuiTableColumnFlags.WidthStretch,32)
                         for effect, info in pairs(cantrips) do
+                            local iconID = info.icon
+                            local iconBackgroundID = info.iconBackground
+                            local spellIcon = info.spellIcon
                             imgui.TableNextRow()
                             imgui.TableSetColumnIndex(0)
+                            if iconBackgroundID then
+                                --- @type ManagedTexture
+                                local icon = GetOrCreateTexture(iconBackgroundID)
+                                if icon then
+                                    local pos = imgui.GetCursorScreenPos()
+                                    imgui.Image(icon.TexturePtr,iconVectorSize)
+                                    imgui.SetCursorScreenPos(pos)
+                                end
+                            end
+                            if iconID then
+                                --- @type ManagedTexture
+                                local icon = GetOrCreateTexture(iconID)
+                                if icon then
+                                    imgui.Image(icon.TexturePtr,iconVectorSize)
+                                end
+                                imgui.SameLine()
+                            end
+                            if spellIcon then
+                                local spell = game.Character.SpellBook.Get(spellIcon.ToNumber())
+                                if spell then
+                                    --- @type ManagedTexture
+                                    local icon = GetOrCreateTexture(spell.Icon)
+                                    if icon then
+                                        imgui.Image(icon.TexturePtr,iconVectorSize)
+                                    end
+                                    imgui.SameLine()
+                                end
+                            end
                             imgui.TextColored(info.color, effect)
                             imgui.TableSetColumnIndex(1)
                             imgui.TextColored(cantriptypes[info.value], info.value)
