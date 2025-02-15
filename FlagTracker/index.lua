@@ -2,7 +2,7 @@ local im = require("imgui")
 local ubviews = require("utilitybelt.views")
 local Quest = require("quests")
 local imgui = im.ImGui
-local version = "1.7.1"
+local version = "1.7.2"
 local currentHUDPosition = nil
 local defaultHUDposition = Vector2.new(500,100)
 local textures = {}
@@ -24,6 +24,7 @@ local settings = {
     hideUnacquiredSlayers=false,
     hideMissingCantrips=false
 }
+-- Maps Numeric Value to CreatureType
 local creatureTypeMap = {
     [0] = CreatureType.Invalid,
     [1] = CreatureType.Olthoi,
@@ -128,6 +129,11 @@ local creatureTypeMap = {
     [100] = CreatureType.Gurog,
     [101] = CreatureType.Anekshay
 }
+-- State Tracking for Tree Nodes
+local treeOpenStates = {
+    ["Stat Augs"] = false,
+    ["Resistance Augs"] = false
+}
 -- Tree Layout for Augmentation Tab
 local augmentations = {
     ["Death Augs"] = {
@@ -191,11 +197,6 @@ local augmentations = {
         {"Acid",IntId.AugmentationResistanceAcid,2,"Shujio Milao","Hebian-To"},
         {"Lightning",IntId.AugmentationResistanceLightning,2,"Enli Yuo","Hebian-To"}
     }
-}
--- State Tracking for Augmentation Tree Nodes
-local augTreeOpenStates = {
-    ["Stat Augs"] = false,
-    ["Resistance Augs"] = false
 }
 -- Tree Layout for Luminance Auras
 local luminanceauras = {
@@ -271,8 +272,6 @@ local characterflags = {
         {typeQuest,"Diemos Access","golemstonediemosgiven",1,2}
     }
 }
--- State Tracking for Character Flags
-local characterflagTreeOpenStates = {}
 -- Tree Layout for Society Quests
 local questTypeOther = 0
 local questTypeKillTask = 1
@@ -436,6 +435,9 @@ end
 
 -- Texture Caching
 local function GetOrCreateTexture(iconID)
+    if iconID == nil then
+        iconID = 0x06005CE6
+    end
     local preloadedTexture = textures[iconID]
     if not preloadedTexture then
         local texture = ubviews.Huds.GetIconTexture(iconID)
@@ -446,7 +448,6 @@ local function GetOrCreateTexture(iconID)
     else
         return preloadedTexture
     end
-    return ubviews.Huds.GetIconTexture(0x0600109A)
 end
 
 -- Refresh and Populate Cantrips
@@ -553,10 +554,9 @@ hud.OnRender.Add(function()
         if imgui.BeginTabItem("Augs") then
             for category, augList in pairs(augmentations) do
                 imgui.Separator()
-                imgui.SetNextItemOpen(augTreeOpenStates[category] == nil or augTreeOpenStates[category])
-                local isTreeNodeOpen = imgui.TreeNode(category)
-                augTreeOpenStates[category] = isTreeNodeOpen
-                if isTreeNodeOpen then
+                imgui.SetNextItemOpen(treeOpenStates[category] == nil or treeOpenStates[category])
+                treeOpenStates[category] = imgui.TreeNode(category)
+                if treeOpenStates[category] then
                     -- Create a new table for this category
                     local numColumns = 2
                     if imgui.BeginTable("Augmentations_" .. category, numColumns * 2) then
@@ -956,10 +956,9 @@ hud.OnRender.Add(function()
             end
             for category, flagInfo in pairs(characterflags) do
                 imgui.Separator()
-                imgui.SetNextItemOpen(characterflagTreeOpenStates[category] == nil or characterflagTreeOpenStates[category])
-                local isTreeNodeOpen = imgui.TreeNode(category)
-                characterflagTreeOpenStates[category] = isTreeNodeOpen
-                if isTreeNodeOpen then
+                imgui.SetNextItemOpen(treeOpenStates[category] == nil or treeOpenStates[category])
+                treeOpenStates[category] = imgui.TreeNode(category)
+                if treeOpenStates[category] then
                     if imgui.BeginTable("Character Flags_"..category, 2) then
                         imgui.TableSetupColumn("Flag 1",im.ImGuiTableColumnFlags.WidthStretch,128)
                         imgui.TableSetupColumn("Flag 1 Points",im.ImGuiTableColumnFlags.WidthStretch,32)
@@ -1041,7 +1040,9 @@ hud.OnRender.Add(function()
             end
             for cantripgroup, cantrips in pairs(cantripmap) do
                 imgui.Separator()
-                if imgui.TreeNode(cantripgroup) then
+                imgui.SetNextItemOpen(treeOpenStates[cantripgroup] == nil or treeOpenStates[cantripgroup])
+                treeOpenStates[cantripgroup] = imgui.TreeNode(cantripgroup)
+                if treeOpenStates[cantripgroup] then
                     if imgui.BeginTable(cantripgroup,2) then
                         imgui.TableSetupColumn(cantripgroup,im.ImGuiTableColumnFlags.WidthStretch,64)
                         imgui.TableSetupColumn("Status",im.ImGuiTableColumnFlags.WidthStretch,32)
@@ -1098,7 +1099,10 @@ hud.OnRender.Add(function()
             if imgui.Button("Refresh") then
                 RefreshSlayers()
             end
-            if imgui.TreeNode("Slayers") then
+            imgui.Separator()
+            imgui.SetNextItemOpen(treeOpenStates["Slayers"] == nil or treeOpenStates["Slayers"])
+            treeOpenStates["Slayers"] = imgui.TreeNode("Slayers")
+            if treeOpenStates["Slayers"] then
                 if imgui.BeginTable("Slayer Weapons",2) then
                     imgui.TableSetupColumn("Slayer Type",im.ImGuiTableColumnFlags.WidthStretch,16)
                     imgui.TableSetupColumn("Weapon Name",im.ImGuiTableColumnFlags.WidthStretch,32)
@@ -1115,8 +1119,15 @@ hud.OnRender.Add(function()
                                     imgui.TableSetColumnIndex(0)
                                     imgui.TextColored(colorgreen,tostring(category))
                                     imgui.TableSetColumnIndex(1)
+                                    local pos = imgui.GetCursorScreenPos()
                                     local icon = GetOrCreateTexture(weapon.DataValues[DataId.Icon])
+                                    local iconUnderlay = GetOrCreateTexture(weapon.DataValues[DataId.IconUnderlay])
+                                    local iconOverlay = GetOrCreateTexture(weapon.DataValues[DataId.IconOverlay])
+                                    imgui.Image(iconUnderlay.TexturePtr,iconVectorSize)
+                                    imgui.SetCursorScreenPos(pos)
                                     imgui.Image(icon.TexturePtr,iconVectorSize)
+                                    imgui.SetCursorScreenPos(pos)
+                                    imgui.Image(iconOverlay.TexturePtr,iconVectorSize)
                                     if imgui.IsItemClicked() then
                                         game.Actions.ObjectSelect(weapon.Id)
                                     end
