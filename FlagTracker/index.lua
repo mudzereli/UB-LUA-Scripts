@@ -2,7 +2,7 @@ local im = require("imgui")
 local ubviews = require("utilitybelt.views")
 local Quest = require("quests")
 local imgui = im.ImGui
-local version = "1.6.1"
+local version = "1.7.0"
 local currentHUDPosition = nil
 local defaultHUDposition = Vector2.new(500,100)
 local textures = {}
@@ -296,6 +296,115 @@ local skillcantripreplacements = {
     [SkillId.MagicDefense] = "MagicResistance",
     [SkillId.MeleeDefense] = "Invulnerability"
 }
+local creatureTypeMap = {
+    [0] = "Invalid",
+    [1] = "Olthoi",
+    [2] = "Banderling",
+    [3] = "Drudge",
+    [4] = "Mosswart",
+    [5] = "Lugian",
+    [6] = "Tumerok",
+    [7] = "Mite",
+    [8] = "Tusker",
+    [9] = "PhyntosWasp",
+    [10] = "Rat",
+    [11] = "Auroch",
+    [12] = "Cow",
+    [13] = "Golem",
+    [14] = "Undead",
+    [15] = "Gromnie",
+    [16] = "Reedshark",
+    [17] = "Armoredillo",
+    [18] = "Fae",
+    [19] = "Virindi",
+    [20] = "Wisp",
+    [21] = "Knathtead",
+    [22] = "Shadow",
+    [23] = "Mattekar",
+    [24] = "Mumiyah",
+    [25] = "Rabbit",
+    [26] = "Sclavus",
+    [27] = "ShallowsShark",
+    [28] = "Monouga",
+    [29] = "Zefir",
+    [30] = "Skeleton",
+    [31] = "Human",
+    [32] = "Shreth",
+    [33] = "Chittick",
+    [34] = "Moarsman",
+    [35] = "OlthoiLarvae",
+    [36] = "Slithis",
+    [37] = "Deru",
+    [38] = "FireElemental",
+    [39] = "Snowman",
+    [40] = "Unknown",
+    [41] = "Bunny",
+    [42] = "LightningElemental",
+    [43] = "Rockslide",
+    [44] = "Grievver",
+    [45] = "Niffis",
+    [46] = "Ursuin",
+    [47] = "Crystal",
+    [48] = "HollowMinion",
+    [49] = "Scarecrow",
+    [50] = "Idol",
+    [51] = "Empyrean",
+    [52] = "Hopeslayer",
+    [53] = "Doll",
+    [54] = "Marionette",
+    [55] = "Carenzi",
+    [56] = "Siraluun",
+    [57] = "AunTumerok",
+    [58] = "HeaTumerok",
+    [59] = "Simulacrum",
+    [60] = "AcidElemental",
+    [61] = "FrostElemental",
+    [62] = "Elemental",
+    [63] = "Statue",
+    [64] = "Wall",
+    [65] = "AlteredHuman",
+    [66] = "Device",
+    [67] = "Harbinger",
+    [68] = "DarkSarcophagus",
+    [69] = "Chicken",
+    [70] = "GotrokLugian",
+    [71] = "Margul",
+    [72] = "BleachedRabbit",
+    [73] = "NastyRabbit",
+    [74] = "GrimacingRabbit",
+    [75] = "Burun",
+    [76] = "Target",
+    [77] = "Ghost",
+    [78] = "Fiun",
+    [79] = "Eater",
+    [80] = "Penguin",
+    [81] = "Ruschk",
+    [82] = "Thrungus",
+    [83] = "ViamontianKnight",
+    [84] = "Remoran",
+    [85] = "Swarm",
+    [86] = "Moar",
+    [87] = "EnchantedArms",
+    [88] = "Sleech",
+    [89] = "Mukkir",
+    [90] = "Merwart",
+    [91] = "Food",
+    [92] = "ParadoxOlthoi",
+    [93] = "Harvest",
+    [94] = "Energy",
+    [95] = "Apparition",
+    [96] = "Aerbax",
+    [97] = "Touched",
+    [98] = "BlightedMoarsman",
+    [99] = "GearKnight",
+    [100] = "Gurog",
+    [101] = "Anekshay"
+}
+local slayerWeapons = {}
+
+local function GetCreatureType(number)
+    return creatureTypeMap[number] or "Unknown"
+end
 
 local function GetOrCreateTexture(iconID)
     local preloadedTexture = textures[iconID]
@@ -364,6 +473,19 @@ local function RefreshCantrips()
             end
         end
     end
+end
+
+local function CategorizeSlayer(wobject)
+    local slayerID = wobject.IntValues[IntId.SlayerCreatureType]
+    if slayerID then
+        local slayerCreatureType = GetCreatureType(slayerID)
+        local slayerGroup = slayerWeapons[slayerCreatureType]
+        if not slayerGroup then
+            slayerGroup = {}
+            slayerWeapons[slayerCreatureType] = slayerGroup
+        end
+        table.insert(slayerGroup,wobject.Name)
+    end    
 end
 
 print("[LUA]: Loading FlagTracker v"..version)
@@ -862,6 +984,7 @@ hud.OnRender.Add(function()
             imgui.EndTabItem()
         end
 
+        -- Cantrips Tab
         if imgui.BeginTabItem("Cantrips") then
             if imgui.Button("Refresh") then
                 RefreshCantrips()
@@ -915,6 +1038,44 @@ hud.OnRender.Add(function()
                     imgui.TreePop()
                 end
             end
+            imgui.EndTabItem()
+        end
+
+        -- Slayers Tab
+        if imgui.BeginTabItem("Slayers") then
+            if imgui.Button("Refresh") then
+                slayerWeapons = {}
+                for _, v in ipairs(game.Character.Inventory) do
+                    if v.ObjectClass == ObjectClass.MeleeWeapon
+                        or v.ObjectClass == ObjectClass.MissileWeapon
+                        or v.ObjectClass == ObjectClass.WandStaffOrb then
+                        if v.HasAppraisalData then
+                            CategorizeSlayer(v)
+                        else
+                            v.Appraise(nil,function (res)
+                                CategorizeSlayer(game.World.Get(res.ObjectId))
+                            end)
+                        end
+                    end
+                end
+            end
+            
+            if imgui.BeginTable("Slayer Weapons",2) then
+                imgui.TableSetupColumn("Slayer Type",im.ImGuiTableColumnFlags.WidthStretch,32)
+                imgui.TableSetupColumn("Weapon Name",im.ImGuiTableColumnFlags.WidthStretch,32)
+                imgui.TableHeadersRow()
+                for category, slayerGroup in pairs(slayerWeapons) do
+                    for _, weaponName in ipairs(slayerGroup) do
+                        imgui.TableNextRow()
+                        imgui.TableSetColumnIndex(0)
+                        imgui.Text(category)
+                        imgui.TableSetColumnIndex(1)
+                        imgui.Text(weaponName)
+                    end
+                end
+                imgui.EndTable()
+            end
+
             imgui.EndTabItem()
         end
 
