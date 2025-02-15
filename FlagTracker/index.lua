@@ -1121,9 +1121,13 @@ hud.OnRender.Add(function()
                                     imgui.TableSetColumnIndex(1)
                                     local pos = imgui.GetCursorScreenPos()
                                     local icon = GetOrCreateTexture(weapon.DataValues[DataId.Icon])
-                                    local iconUnderlay = GetOrCreateTexture(weapon.DataValues[DataId.IconUnderlay])
+                                    local iconUnderlayID = weapon.DataValues[DataId.IconUnderlay]
+                                    if not iconUnderlayID then
+                                        iconUnderlayID = 0x060011CB
+                                    end
+                                    local iconUnderlayTexture = GetOrCreateTexture(iconUnderlayID)
                                     local iconOverlay = GetOrCreateTexture(weapon.DataValues[DataId.IconOverlay])
-                                    imgui.Image(iconUnderlay.TexturePtr,iconVectorSize)
+                                    imgui.Image(iconUnderlayTexture.TexturePtr,iconVectorSize)
                                     imgui.SetCursorScreenPos(pos)
                                     imgui.Image(icon.TexturePtr,iconVectorSize)
                                     imgui.SetCursorScreenPos(pos)
@@ -1141,7 +1145,7 @@ hud.OnRender.Add(function()
                         elseif not settings.hideUnacquiredSlayers then
                             imgui.TableNextRow()
                             imgui.TableSetColumnIndex(0)
-                            imgui.TextColored(colorlightgray,tostring(category))
+                            imgui.TextColored(colorwhite,tostring(category))
                             imgui.TableSetColumnIndex(1)
                             imgui.TextColored(colorlightgray,"No Weapon Found")
                         end
