@@ -2,7 +2,7 @@ local im = require("imgui")
 local ubviews = require("utilitybelt.views")
 local Quest = require("quests")
 local imgui = im.ImGui
-local version = "1.7.0"
+local version = "1.7.1"
 local currentHUDPosition = nil
 local defaultHUDposition = Vector2.new(500,100)
 local textures = {}
@@ -11,6 +11,7 @@ local colorwhite = Vector4.new(1,1,1,1)
 local coloryellow = Vector4.new(1,1,0,1)
 local colorred = Vector4.new(1,0,0,1)
 local colorgreen = Vector4.new(0,1,0,1)
+local colorlightgray = Vector4.new(0.7, 0.7, 0.7, 1)
 local iconVectorSize = Vector2.new(16,16)
 
 local settings = {
@@ -19,8 +20,115 @@ local settings = {
     showSociety=true,
     showFacHub=false,
     showQuests=false,
-    showFlags=true
+    showFlags=true,
+    hideUnacquiredSlayers=false,
+    hideMissingCantrips=false
 }
+local creatureTypeMap = {
+    [0] = CreatureType.Invalid,
+    [1] = CreatureType.Olthoi,
+    [2] = CreatureType.Banderling,
+    [3] = CreatureType.Drudge,
+    [4] = CreatureType.Mosswart,
+    [5] = CreatureType.Lugian,
+    [6] = CreatureType.Tumerok,
+    [7] = CreatureType.Mite,
+    [8] = CreatureType.Tusker,
+    [9] = CreatureType.PhyntosWasp,
+    [10] = CreatureType.Rat,
+    [11] = CreatureType.Auroch,
+    [12] = CreatureType.Cow,
+    [13] = CreatureType.Golem,
+    [14] = CreatureType.Undead,
+    [15] = CreatureType.Gromnie,
+    [16] = CreatureType.Reedshark,
+    [17] = CreatureType.Armoredillo,
+    [18] = CreatureType.Fae,
+    [19] = CreatureType.Virindi,
+    [20] = CreatureType.Wisp,
+    [21] = CreatureType.Knathtead,
+    [22] = CreatureType.Shadow,
+    [23] = CreatureType.Mattekar,
+    [24] = CreatureType.Mumiyah,
+    [25] = CreatureType.Rabbit,
+    [26] = CreatureType.Sclavus,
+    [27] = CreatureType.ShallowsShark,
+    [28] = CreatureType.Monouga,
+    [29] = CreatureType.Zefir,
+    [30] = CreatureType.Skeleton,
+    [31] = CreatureType.Human,
+    [32] = CreatureType.Shreth,
+    [33] = CreatureType.Chittick,
+    [34] = CreatureType.Moarsman,
+    [35] = CreatureType.OlthoiLarvae,
+    [36] = CreatureType.Slithis,
+    [37] = CreatureType.Deru,
+    [38] = CreatureType.FireElemental,
+    [39] = CreatureType.Snowman,
+    [40] = CreatureType.Unknown,
+    [41] = CreatureType.Bunny,
+    [42] = CreatureType.LightningElemental,
+    [43] = CreatureType.Rockslide,
+    [44] = CreatureType.Grievver,
+    [45] = CreatureType.Niffis,
+    [46] = CreatureType.Ursuin,
+    [47] = CreatureType.Crystal,
+    [48] = CreatureType.HollowMinion,
+    [49] = CreatureType.Scarecrow,
+    [50] = CreatureType.Idol,
+    [51] = CreatureType.Empyrean,
+    [52] = CreatureType.Hopeslayer,
+    [53] = CreatureType.Doll,
+    [54] = CreatureType.Marionette,
+    [55] = CreatureType.Carenzi,
+    [56] = CreatureType.Siraluun,
+    [57] = CreatureType.AunTumerok,
+    [58] = CreatureType.HeaTumerok,
+    [59] = CreatureType.Simulacrum,
+    [60] = CreatureType.AcidElemental,
+    [61] = CreatureType.FrostElemental,
+    [62] = CreatureType.Elemental,
+    [63] = CreatureType.Statue,
+    [64] = CreatureType.Wall,
+    [65] = CreatureType.AlteredHuman,
+    [66] = CreatureType.Device,
+    [67] = CreatureType.Harbinger,
+    [68] = CreatureType.DarkSarcophagus,
+    [69] = CreatureType.Chicken,
+    [70] = CreatureType.GotrokLugian,
+    [71] = CreatureType.Margul,
+    [72] = CreatureType.BleachedRabbit,
+    [73] = CreatureType.NastyRabbit,
+    [74] = CreatureType.GrimacingRabbit,
+    [75] = CreatureType.Burun,
+    [76] = CreatureType.Target,
+    [77] = CreatureType.Ghost,
+    [78] = CreatureType.Fiun,
+    [79] = CreatureType.Eater,
+    [80] = CreatureType.Penguin,
+    [81] = CreatureType.Ruschk,
+    [82] = CreatureType.Thrungus,
+    [83] = CreatureType.ViamontianKnight,
+    [84] = CreatureType.Remoran,
+    [85] = CreatureType.Swarm,
+    [86] = CreatureType.Moar,
+    [87] = CreatureType.EnchantedArms,
+    [88] = CreatureType.Sleech,
+    [89] = CreatureType.Mukkir,
+    [90] = CreatureType.Merwart,
+    [91] = CreatureType.Food,
+    [92] = CreatureType.ParadoxOlthoi,
+    [93] = CreatureType.Harvest,
+    [94] = CreatureType.Energy,
+    [95] = CreatureType.Apparition,
+    [96] = CreatureType.Aerbax,
+    [97] = CreatureType.Touched,
+    [98] = CreatureType.BlightedMoarsman,
+    [99] = CreatureType.GearKnight,
+    [100] = CreatureType.Gurog,
+    [101] = CreatureType.Anekshay
+}
+-- Tree Layout for Augmentation Tab
 local augmentations = {
     ["Death Augs"] = {
         {"Keep Items",IntId.AugmentationLessDeathItemLoss,3,"Rohula bint Ludun","Ayan Baqur"},
@@ -84,10 +192,12 @@ local augmentations = {
         {"Lightning",IntId.AugmentationResistanceLightning,2,"Enli Yuo","Hebian-To"}
     }
 }
+-- State Tracking for Augmentation Tree Nodes
 local augTreeOpenStates = {
     ["Stat Augs"] = false,
     ["Resistance Augs"] = false
 }
+-- Tree Layout for Luminance Auras
 local luminanceauras = {
     ["Nalicana Auras"] = {
         {"+1 Aetheria Proc Rating",IntId.LumAugSurgeChanceRating,5},
@@ -112,6 +222,7 @@ local luminanceauras = {
         {"(Lord Tyragar) +1 Damage Reduction Rating",IntId.LumAugDamageReductionRating,5,"LoyalToLordTyragar"},
     }
 }
+-- Tree Layout for Recall Spells
 local recallspells = {
     {"Recall the Sanctuary",2023},
     {"Aerlinthe Recall",2041},
@@ -131,16 +242,9 @@ local recallspells = {
     {"Viridian Rise Recall",6321},
     {"Viridian Rise Great Tree Recall",6322}
 }
+-- Tree Layout for Character Flags
 local typeQuest = 0
 local typeAetheria = 2
---[[
-TO ADD:
-    - Factions (Rossu Morta / Whispering Blade)
-    - Gauntlet ?
-    - Dereth Explorer
-    - Enlightenment
-    - Paragon
-]]--
 local characterflags = {
     ["Additional Skill Credits"] = {
         {typeQuest,"+1 Skill Lum Aura","lumaugskillquest",2,2},
@@ -167,7 +271,9 @@ local characterflags = {
         {typeQuest,"Diemos Access","golemstonediemosgiven",1,2}
     }
 }
+-- State Tracking for Character Flags
 local characterflagTreeOpenStates = {}
+-- Tree Layout for Society Quests
 local questTypeOther = 0
 local questTypeKillTask = 1
 local questTypeCollectItem = 2
@@ -215,6 +321,7 @@ local societyquests = {
         {"MC: Supply Saboteur","","SuppliesTurnedIn1209",questTypeOther}
     }
 }
+-- Rank Map for Societies {Min Ribbons,Max Ribbons,Ribbons Per Day}
 local societyranks = {
     ["Initiate"] = {1,95,50},
     ["Adept"] = {101,295,100},
@@ -222,6 +329,7 @@ local societyranks = {
     ["Lord"] = {601,995,200},
     ["Master"] = {1001,9999,250}
 }
+-- Tree Layout for Facility Hub Quests
 local fachubquests = {
     ["Level 10"] = {
         {"Glenden Wood","fachubglendenwood"},
@@ -262,6 +370,7 @@ local fachubquests = {
         {"Blackmire","fachubblackmire"}
     }
 }
+-- Tree Layout for Cantrip Tracker
 local cantripmap = {
     ["Specialized Skills"] = {},
     ["Trained Skills"] = {},
@@ -284,128 +393,48 @@ local cantripmap = {
         ["Storm Ward"] = { value = "N/A", color = Vector4.new(0.8, 0.5, 1, 1), spellIcon = SpellId.LightningProtectionSelf8} -- Pastel Purple
     }
 }
+-- Color Map for Cantrip Levels
 local cantriptypes = {
-    ["N/A"] = Vector4.new(0.7, 0.7, 0.7, 1), -- Lighter Gray
+    ["N/A"] = colorlightgray, -- Lighter Gray
     ["Minor"] = Vector4.new(1, 1, 1, 1), -- White (still fine)
     ["Moderate"] = Vector4.new(0.3, 1, 0.3, 1), -- Softer Green
     ["Major"] = Vector4.new(0.3, 0.6, 1, 1), -- Lighter Blue
     ["Epic"] = Vector4.new(0.8, 0.3, 1, 1), -- Brighter Purple
     ["Legendary"] = Vector4.new(1, 0.7, 0.2, 1) -- Softer Orange    
 }
+-- Skill Replacement for Cantrips That Have Different Names Than Their Skill
 local skillcantripreplacements = {
     [SkillId.MagicDefense] = "MagicResistance",
     [SkillId.MeleeDefense] = "Invulnerability"
 }
-local creatureTypeMap = {
-    [0] = "Invalid",
-    [1] = "Olthoi",
-    [2] = "Banderling",
-    [3] = "Drudge",
-    [4] = "Mosswart",
-    [5] = "Lugian",
-    [6] = "Tumerok",
-    [7] = "Mite",
-    [8] = "Tusker",
-    [9] = "PhyntosWasp",
-    [10] = "Rat",
-    [11] = "Auroch",
-    [12] = "Cow",
-    [13] = "Golem",
-    [14] = "Undead",
-    [15] = "Gromnie",
-    [16] = "Reedshark",
-    [17] = "Armoredillo",
-    [18] = "Fae",
-    [19] = "Virindi",
-    [20] = "Wisp",
-    [21] = "Knathtead",
-    [22] = "Shadow",
-    [23] = "Mattekar",
-    [24] = "Mumiyah",
-    [25] = "Rabbit",
-    [26] = "Sclavus",
-    [27] = "ShallowsShark",
-    [28] = "Monouga",
-    [29] = "Zefir",
-    [30] = "Skeleton",
-    [31] = "Human",
-    [32] = "Shreth",
-    [33] = "Chittick",
-    [34] = "Moarsman",
-    [35] = "OlthoiLarvae",
-    [36] = "Slithis",
-    [37] = "Deru",
-    [38] = "FireElemental",
-    [39] = "Snowman",
-    [40] = "Unknown",
-    [41] = "Bunny",
-    [42] = "LightningElemental",
-    [43] = "Rockslide",
-    [44] = "Grievver",
-    [45] = "Niffis",
-    [46] = "Ursuin",
-    [47] = "Crystal",
-    [48] = "HollowMinion",
-    [49] = "Scarecrow",
-    [50] = "Idol",
-    [51] = "Empyrean",
-    [52] = "Hopeslayer",
-    [53] = "Doll",
-    [54] = "Marionette",
-    [55] = "Carenzi",
-    [56] = "Siraluun",
-    [57] = "AunTumerok",
-    [58] = "HeaTumerok",
-    [59] = "Simulacrum",
-    [60] = "AcidElemental",
-    [61] = "FrostElemental",
-    [62] = "Elemental",
-    [63] = "Statue",
-    [64] = "Wall",
-    [65] = "AlteredHuman",
-    [66] = "Device",
-    [67] = "Harbinger",
-    [68] = "DarkSarcophagus",
-    [69] = "Chicken",
-    [70] = "GotrokLugian",
-    [71] = "Margul",
-    [72] = "BleachedRabbit",
-    [73] = "NastyRabbit",
-    [74] = "GrimacingRabbit",
-    [75] = "Burun",
-    [76] = "Target",
-    [77] = "Ghost",
-    [78] = "Fiun",
-    [79] = "Eater",
-    [80] = "Penguin",
-    [81] = "Ruschk",
-    [82] = "Thrungus",
-    [83] = "ViamontianKnight",
-    [84] = "Remoran",
-    [85] = "Swarm",
-    [86] = "Moar",
-    [87] = "EnchantedArms",
-    [88] = "Sleech",
-    [89] = "Mukkir",
-    [90] = "Merwart",
-    [91] = "Food",
-    [92] = "ParadoxOlthoi",
-    [93] = "Harvest",
-    [94] = "Energy",
-    [95] = "Apparition",
-    [96] = "Aerbax",
-    [97] = "Touched",
-    [98] = "BlightedMoarsman",
-    [99] = "GearKnight",
-    [100] = "Gurog",
-    [101] = "Anekshay"
+-- Slayer Weapons Checklist
+local essentialSlayerWeapons = {
+    CreatureType.Anekshay,
+    CreatureType.Burun,
+    CreatureType.Elemental,
+    CreatureType.FireElemental,
+    CreatureType.FrostElemental,
+    CreatureType.AcidElemental,
+    CreatureType.LightningElemental,
+    CreatureType.Ghost,
+    CreatureType.Human,
+    CreatureType.Mukkir,
+    CreatureType.Olthoi,
+    CreatureType.Shadow,
+    CreatureType.Skeleton,
+    CreatureType.Tumerok,
+    CreatureType.Undead,
+    CreatureType.Virindi
 }
+-- Slayer Weapons Populated From Inventory
 local slayerWeapons = {}
 
+-- Lookup For Number > CreatureType
 local function GetCreatureType(number)
     return creatureTypeMap[number] or "Unknown"
 end
 
+-- Texture Caching
 local function GetOrCreateTexture(iconID)
     local preloadedTexture = textures[iconID]
     if not preloadedTexture then
@@ -420,6 +449,7 @@ local function GetOrCreateTexture(iconID)
     return ubviews.Huds.GetIconTexture(0x0600109A)
 end
 
+-- Refresh and Populate Cantrips
 local function RefreshCantrips() 
     for id, sk in pairs(game.Character.Weenie.Skills) do
         local skillName = skillcantripreplacements[id]
@@ -475,6 +505,8 @@ local function RefreshCantrips()
     end
 end
 
+-- Function Which Takes a WorldObject and Populates slayerWeapons If It's a Slayer
+---@param wobject WorldObject
 local function CategorizeSlayer(wobject)
     local slayerID = wobject.IntValues[IntId.SlayerCreatureType]
     if slayerID then
@@ -484,8 +516,26 @@ local function CategorizeSlayer(wobject)
             slayerGroup = {}
             slayerWeapons[slayerCreatureType] = slayerGroup
         end
-        table.insert(slayerGroup,wobject.Name)
+        table.insert(slayerGroup,wobject.Id)
     end    
+end
+
+-- Refresh and Populate slayerWeapons Using Above Function
+local function RefreshSlayers()
+    slayerWeapons = {}
+    for _, v in ipairs(game.Character.Inventory) do
+        if v.ObjectClass == ObjectClass.MeleeWeapon
+            or v.ObjectClass == ObjectClass.MissileWeapon
+            or v.ObjectClass == ObjectClass.WandStaffOrb then
+            if v.HasAppraisalData then
+                CategorizeSlayer(v)
+            else
+                v.Appraise(nil,function (res)
+                    CategorizeSlayer(game.World.Get(res.ObjectId))
+                end)
+            end
+        end
+    end
 end
 
 print("[LUA]: Loading FlagTracker v"..version)
@@ -996,42 +1046,44 @@ hud.OnRender.Add(function()
                         imgui.TableSetupColumn(cantripgroup,im.ImGuiTableColumnFlags.WidthStretch,64)
                         imgui.TableSetupColumn("Status",im.ImGuiTableColumnFlags.WidthStretch,32)
                         for effect, info in pairs(cantrips) do
-                            local iconID = info.icon
-                            local iconBackgroundID = info.iconBackground
-                            local spellIcon = info.spellIcon
-                            imgui.TableNextRow()
-                            imgui.TableSetColumnIndex(0)
-                            if iconBackgroundID then
-                                --- @type ManagedTexture
-                                local icon = GetOrCreateTexture(iconBackgroundID)
-                                if icon then
-                                    local pos = imgui.GetCursorScreenPos()
-                                    imgui.Image(icon.TexturePtr,iconVectorSize)
-                                    imgui.SetCursorScreenPos(pos)
-                                end
-                            end
-                            if iconID then
-                                --- @type ManagedTexture
-                                local icon = GetOrCreateTexture(iconID)
-                                if icon then
-                                    imgui.Image(icon.TexturePtr,iconVectorSize)
-                                end
-                                imgui.SameLine()
-                            end
-                            if spellIcon then
-                                local spell = game.Character.SpellBook.Get(spellIcon.ToNumber())
-                                if spell then
+                            if not (info.value == "N/A" and settings.hideMissingCantrips) then
+                                local iconID = info.icon
+                                local iconBackgroundID = info.iconBackground
+                                local spellIcon = info.spellIcon
+                                imgui.TableNextRow()
+                                imgui.TableSetColumnIndex(0)
+                                if iconBackgroundID then
                                     --- @type ManagedTexture
-                                    local icon = GetOrCreateTexture(spell.Icon)
+                                    local icon = GetOrCreateTexture(iconBackgroundID)
+                                    if icon then
+                                        local pos = imgui.GetCursorScreenPos()
+                                        imgui.Image(icon.TexturePtr,iconVectorSize)
+                                        imgui.SetCursorScreenPos(pos)
+                                    end
+                                end
+                                if iconID then
+                                    --- @type ManagedTexture
+                                    local icon = GetOrCreateTexture(iconID)
                                     if icon then
                                         imgui.Image(icon.TexturePtr,iconVectorSize)
                                     end
                                     imgui.SameLine()
                                 end
+                                if spellIcon then
+                                    local spell = game.Character.SpellBook.Get(spellIcon.ToNumber())
+                                    if spell then
+                                        --- @type ManagedTexture
+                                        local icon = GetOrCreateTexture(spell.Icon)
+                                        if icon then
+                                            imgui.Image(icon.TexturePtr,iconVectorSize)
+                                        end
+                                        imgui.SameLine()
+                                    end
+                                end
+                                imgui.TextColored(info.color, effect)
+                                imgui.TableSetColumnIndex(1)
+                                imgui.TextColored(cantriptypes[info.value], info.value)
                             end
-                            imgui.TextColored(info.color, effect)
-                            imgui.TableSetColumnIndex(1)
-                            imgui.TextColored(cantriptypes[info.value], info.value)
                         end
                         imgui.EndTable()
                     end
@@ -1044,38 +1096,49 @@ hud.OnRender.Add(function()
         -- Slayers Tab
         if imgui.BeginTabItem("Slayers") then
             if imgui.Button("Refresh") then
-                slayerWeapons = {}
-                for _, v in ipairs(game.Character.Inventory) do
-                    if v.ObjectClass == ObjectClass.MeleeWeapon
-                        or v.ObjectClass == ObjectClass.MissileWeapon
-                        or v.ObjectClass == ObjectClass.WandStaffOrb then
-                        if v.HasAppraisalData then
-                            CategorizeSlayer(v)
-                        else
-                            v.Appraise(nil,function (res)
-                                CategorizeSlayer(game.World.Get(res.ObjectId))
-                            end)
+                RefreshSlayers()
+            end
+            if imgui.TreeNode("Slayers") then
+                if imgui.BeginTable("Slayer Weapons",2) then
+                    imgui.TableSetupColumn("Slayer Type",im.ImGuiTableColumnFlags.WidthStretch,16)
+                    imgui.TableSetupColumn("Weapon Name",im.ImGuiTableColumnFlags.WidthStretch,32)
+                    -- imgui.TableHeadersRow()
+                    -- TODO: Do We Need Separate Tracking For Slayers Which Are Non-Essential (Rares/Etc?)
+                    for _, category in ipairs(essentialSlayerWeapons) do
+                        local slayerGroup = slayerWeapons[category]
+                        if slayerGroup then
+                            for _, weaponID in ipairs(slayerGroup) do
+                                --- @type WorldObject
+                                local weapon = game.World.Get(weaponID)
+                                if weapon then
+                                    imgui.TableNextRow()
+                                    imgui.TableSetColumnIndex(0)
+                                    imgui.TextColored(colorgreen,tostring(category))
+                                    imgui.TableSetColumnIndex(1)
+                                    local icon = GetOrCreateTexture(weapon.DataValues[DataId.Icon])
+                                    imgui.Image(icon.TexturePtr,iconVectorSize)
+                                    if imgui.IsItemClicked() then
+                                        game.Actions.ObjectSelect(weapon.Id)
+                                    end
+                                    imgui.SameLine()
+                                    imgui.TextColored(colorgreen,weapon.Name)
+                                    if imgui.IsItemClicked() then
+                                        game.Actions.ObjectSelect(weapon.Id)
+                                    end
+                                end
+                            end
+                        elseif not settings.hideUnacquiredSlayers then
+                            imgui.TableNextRow()
+                            imgui.TableSetColumnIndex(0)
+                            imgui.TextColored(colorlightgray,tostring(category))
+                            imgui.TableSetColumnIndex(1)
+                            imgui.TextColored(colorlightgray,"No Weapon Found")
                         end
                     end
+                    imgui.EndTable()
                 end
+                imgui.TreePop()
             end
-            
-            if imgui.BeginTable("Slayer Weapons",2) then
-                imgui.TableSetupColumn("Slayer Type",im.ImGuiTableColumnFlags.WidthStretch,32)
-                imgui.TableSetupColumn("Weapon Name",im.ImGuiTableColumnFlags.WidthStretch,32)
-                imgui.TableHeadersRow()
-                for category, slayerGroup in pairs(slayerWeapons) do
-                    for _, weaponName in ipairs(slayerGroup) do
-                        imgui.TableNextRow()
-                        imgui.TableSetColumnIndex(0)
-                        imgui.Text(category)
-                        imgui.TableSetColumnIndex(1)
-                        imgui.Text(weaponName)
-                    end
-                end
-                imgui.EndTable()
-            end
-
             imgui.EndTabItem()
         end
 
@@ -1164,6 +1227,12 @@ hud.OnRender.Add(function()
             if imgui.Checkbox("Show Quests",settings.showQuests) then
                 settings.showQuests = not settings.showQuests
             end
+            if imgui.Checkbox("Hide Unacquired Slayers",settings.hideUnacquiredSlayers) then
+                settings.hideUnacquiredSlayers = not settings.hideUnacquiredSlayers
+            end
+            if imgui.Checkbox("Hide Missing Cantrips",settings.hideMissingCantrips) then
+                settings.hideMissingCantrips = not settings.hideMissingCantrips
+            end
             imgui.EndTabItem()
         end
 
@@ -1180,3 +1249,4 @@ hud.Visible = true
 
 Quest:Refresh()
 RefreshCantrips()
+RefreshSlayers()
