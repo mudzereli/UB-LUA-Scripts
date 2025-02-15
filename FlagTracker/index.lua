@@ -2,7 +2,7 @@ local im = require("imgui")
 local ubviews = require("utilitybelt.views")
 local Quest = require("quests")
 local imgui = im.ImGui
-local version = "1.7.3"
+local version = "1.7.4"
 local currentHUDPosition = nil
 local defaultHUDposition = Vector2.new(500,100)
 local textures = {}
@@ -417,53 +417,45 @@ local skillcantripreplacements = {
     [SkillId.MagicDefense] = "MagicResistance",
     [SkillId.MeleeDefense] = "Invulnerability"
 }
--- Slayer Weapons Checklist
-local essentialSlayerWeapons = {
-    CreatureType.Anekshay, 
-    CreatureType.Burun, -- 0x060035D8
-    CreatureType.Elemental,
-    CreatureType.FireElemental, -- 0x06001C20   
-    CreatureType.FrostElemental, -- 0x06001C19
-    CreatureType.AcidElemental, -- 0x06001C1F
-    CreatureType.LightningElemental, -- 0x06001C1C
-    CreatureType.Ghost,
-    CreatureType.Human,
-    CreatureType.Mukkir, -- 0x0600629E
-    CreatureType.Olthoi, -- 0x060010E7
-    CreatureType.Shadow, -- 0x06001C1E
-    CreatureType.Skeleton, -- 0x06001070
-    CreatureType.Tumerok,
-    CreatureType.Undead, -- 0x060022A4
-    CreatureType.Virindi -- 0x06002B13 -- 0x060022C0
+local trackedWeaponTypes = {
+    ["Creature Slayer"] = {
+        ["Anekshay"] = {IntId.SlayerCreatureType, CreatureType.Anekshay, true, {}},
+        ["Burun"] = {IntId.SlayerCreatureType, CreatureType.Burun, true, {}},
+        ["Elemental"] = {IntId.SlayerCreatureType, CreatureType.Elemental, true, {}},
+        ["FireElemental"] = {IntId.SlayerCreatureType, CreatureType.FireElemental, true, {}},
+        ["FrostElemental"] = {IntId.SlayerCreatureType, CreatureType.FrostElemental, true, {}},
+        ["AcidElemental"] = {IntId.SlayerCreatureType, CreatureType.AcidElemental, true, {}},
+        ["LightningElemental"] = {IntId.SlayerCreatureType, CreatureType.LightningElemental, true, {}},
+        ["Ghost"] = {IntId.SlayerCreatureType, CreatureType.Ghost, true, {}},
+        ["Human"] = {IntId.SlayerCreatureType, CreatureType.Human, true, {}},
+        ["Mukkir"] = {IntId.SlayerCreatureType, CreatureType.Mukkir, true, {}},
+        ["Olthoi"] = {IntId.SlayerCreatureType, CreatureType.Olthoi, true, {}},
+        ["Shadow"] = {IntId.SlayerCreatureType, CreatureType.Shadow, true, {}},
+        ["Skeleton"] = {IntId.SlayerCreatureType, CreatureType.Skeleton, true, {}},
+        ["Tumerok"] = {IntId.SlayerCreatureType, CreatureType.Tumerok, true, {}},
+        ["Undead"] = {IntId.SlayerCreatureType, CreatureType.Undead, true, {}},
+        ["Virindi"] = {IntId.SlayerCreatureType, CreatureType.Virindi, true, {}},
+    },
+    ["Rending / Resistance Cleaving"] = {
+        ["Critical Strike"] = {IntId.ImbuedEffect, 1, true,{}},
+        ["Crippling Blow"] = {IntId.ImbuedEffect, 2, true,{}},
+        ["Armor Rending"] = {IntId.ImbuedEffect, 4, true,{}},
+        ["Slash Rending"] = {IntId.ImbuedEffect, 8, true,{}},
+        ["Resistance Cleaving: Slash "] = {IntId.ResistanceModifierType, 1, false,{}},
+        ["Pierce Rending"] = {IntId.ImbuedEffect, 16, true,{}},
+        ["Resistance Cleaving: Pierce"] = {IntId.ResistanceModifierType, 2, false,{}},
+        ["Bludgeon Rending"] = {IntId.ImbuedEffect, 32, true,{}},
+        ["Resistance Cleaving: Bludgeon"] = {IntId.ResistanceModifierType, 4, false,{}},
+        ["Cold Rending"] = {IntId.ImbuedEffect, 128, true,{}},
+        ["Resistance Cleaving: Cold"] = {IntId.ResistanceModifierType, 8, false,{}},
+        ["Fire Rending"] = {IntId.ImbuedEffect, 512, true,{}},
+        ["Resistance Cleaving: Fire"] = {IntId.ResistanceModifierType, 16, false,{}},
+        ["Acid Rending"] = {IntId.ImbuedEffect, 64, true,{}},
+        ["Resistance Cleaving: Acid"] = {IntId.ResistanceModifierType, 32, false,{}},
+        ["Electric Rending"] = {IntId.ImbuedEffect, 256, true,{}},
+        ["Resistance Cleaving: Electric"] = {IntId.ResistanceModifierType, 64, false,{}}
+    }
 }
--- Slayer Weapons Populated From Inventory
-local slayerWeapons = {}
-
-local trackedRendingWeapons = {
-    ["Critical Strike"] = {IntId.ImbuedEffect, 1, true},
-    ["Crippling Blow"] = {IntId.ImbuedEffect, 2, true},
-    ["Armor Rending"] = {IntId.ImbuedEffect, 4, true},
-    ["Slash Rending"] = {IntId.ImbuedEffect, 8, true},
-    ["Resistance Cleaving: Slash "] = {IntId.ResistanceModifierType, 1, false},
-    ["Pierce Rending"] = {IntId.ImbuedEffect, 16, true},
-    ["Resistance Cleaving: Pierce"] = {IntId.ResistanceModifierType, 2, false},
-    ["Bludgeon Rending"] = {IntId.ImbuedEffect, 32, true},
-    ["Resistance Cleaving: Bludgeon"] = {IntId.ResistanceModifierType, 4, false},
-    ["Cold Rending"] = {IntId.ImbuedEffect, 128, true},
-    ["Resistance Cleaving: Cold"] = {IntId.ResistanceModifierType, 8, false},
-    ["Fire Rending"] = {IntId.ImbuedEffect, 512, true},
-    ["Resistance Cleaving: Fire"] = {IntId.ResistanceModifierType, 16, false},
-    ["Acid Rending"] = {IntId.ImbuedEffect, 64, true},
-    ["Resistance Cleaving: Acid"] = {IntId.ResistanceModifierType, 32, false},
-    ["Electric Rending"] = {IntId.ImbuedEffect, 256, true},
-    ["Resistance Cleaving: Electric"] = {IntId.ResistanceModifierType, 64, false}
-}
-local rendingWeapons = {}
-
--- Lookup For Number > CreatureType
-local function GetCreatureType(number)
-    return creatureTypeMap[number] or "Unknown"
-end
 
 -- Texture Caching
 local function GetOrCreateTexture(iconID)
@@ -538,85 +530,51 @@ local function RefreshCantrips()
     end
 end
 
--- Function Which Takes a WorldObject and Populates slayerWeapons If It's a Slayer
+-- Function Which Takes a WorldObject and Populates Weapons If It's a Tracked Weapon
 ---@param wobject WorldObject
-local function CategorizeSlayer(wobject)
-    local slayerID = wobject.IntValues[IntId.SlayerCreatureType]
-    if slayerID then
-        local slayerCreatureType = GetCreatureType(slayerID)
-        local slayerGroup = slayerWeapons[slayerCreatureType]
-        if not slayerGroup then
-            slayerGroup = {}
-            slayerWeapons[slayerCreatureType] = slayerGroup
+local function CategorizeWeapon(wobject)
+    for _, types in pairs(trackedWeaponTypes) do
+        for _, values in pairs(types) do
+            local weaponIntIDCheck = values[1]
+            local weaponIntIDExpectedResult = values[2]
+            if weaponIntIDCheck == IntId.CreatureType then
+                weaponIntIDExpectedResult = creatureTypeMap[weaponIntIDExpectedResult]
+            end
+            local weaponIntIDResult = wobject.IntValues[weaponIntIDCheck]
+            if weaponIntIDResult == weaponIntIDExpectedResult then
+                table.insert(values[4],wobject.Id)
+            end 
         end
-        table.insert(slayerGroup,wobject.Id)
-    end    
+    end
 end
 
--- Takes an Inventory and Categorizes Slayers From It, Calling Appraisals if Needed
-local function RefreshSlayersFromInventory(inventory)
+-- Takes an Inventory and Categorizes Weapons From It, Calling Appraisals if Needed
+local function RefreshWeaponsFromInventory(inventory)
     for _, v in ipairs(inventory) do
         if v.ObjectClass == ObjectClass.MeleeWeapon
             or v.ObjectClass == ObjectClass.MissileWeapon
             or v.ObjectClass == ObjectClass.WandStaffOrb then
             if v.HasAppraisalData then
-                CategorizeSlayer(v)
+                CategorizeWeapon(v)
             else
                 v.Appraise(nil,function (res)
-                    CategorizeSlayer(game.World.Get(res.ObjectId))
+                    CategorizeWeapon(game.World.Get(res.ObjectId))
                 end)
             end
         end
     end
 end
 
--- Refresh and Populate slayerWeapons Using Above Function
-local function RefreshSlayers()
-    slayerWeapons = {}
-    RefreshSlayersFromInventory(game.Character.Equipment)
-    RefreshSlayersFromInventory(game.Character.Inventory)
-end
-
--- Function Which Takes a WorldObject and Populates rendingWeapons If It's a Rending Weapon
----@param wobject WorldObject
-local function CategorizeRendingWeapon(wobject)
-    for rendingGroup, rendingInfo in pairs(trackedRendingWeapons) do
-        local rendingIntIDCheck = rendingInfo[1]
-        local rendingIntIDResultExpected = rendingInfo[2]
-        local rendingIntIDResult = wobject.IntValues[rendingIntIDCheck]
-        if rendingIntIDResult == rendingIntIDResultExpected then
-            local rg = rendingWeapons[rendingGroup]
-            if not rg then
-                rg = {}
-                rendingWeapons[rendingGroup] = rg
-            end
-            table.insert(rg,wobject.Id)
-        end    
-    end
-end
-
--- Takes an Inventory and Categorizes Rending Weapons From It, Calling Appraisals if Needed
-local function RefreshRendingWeaponsFromInventory(inventory)
-    for _, v in ipairs(inventory) do
-        if v.ObjectClass == ObjectClass.MeleeWeapon
-            or v.ObjectClass == ObjectClass.MissileWeapon
-            or v.ObjectClass == ObjectClass.WandStaffOrb then
-            if v.HasAppraisalData then
-                CategorizeRendingWeapon(v)
-            else
-                v.Appraise(nil,function (res)
-                    CategorizeRendingWeapon(game.World.Get(res.ObjectId))
-                end)
-            end
+-- Refresh and Populate Weapons Using Above Function
+local function RefreshWeapons()
+    for _, types in pairs(trackedWeaponTypes) do
+        for _, values in pairs(types) do
+            -- Reset Table That Holds Player Weapons
+            values[4] = {}
         end
     end
-end
-
--- Refresh and Populate rendingWeapons Using Above Function
-local function RefreshRendingWeapons()
-    rendingWeapons = {}
-    RefreshRendingWeaponsFromInventory(game.Character.Equipment)
-    RefreshRendingWeaponsFromInventory(game.Character.Inventory)
+    RefreshWeaponsFromInventory(game.Character.Equipment)
+    RefreshWeaponsFromInventory(game.Character.Inventory)
 end
 
 print("[LUA]: Loading FlagTracker v"..version)
@@ -1177,123 +1135,66 @@ hud.OnRender.Add(function()
         -- Slayers Tab
         if imgui.BeginTabItem("Weapons") then
             if imgui.Button("Refresh") then
-                RefreshSlayers()
-                RefreshRendingWeapons()
+                RefreshWeapons()
             end
             -- TODO: Merge Slayers / Resistance Cleaving
             -- TODO: Color Weapons Based On Damage Type
-            imgui.Separator()
-            imgui.SetNextItemOpen(treeOpenStates["Slayers"] == nil or treeOpenStates["Slayers"])
-            treeOpenStates["Slayers"] = imgui.TreeNode("Slayers")
-            if treeOpenStates["Slayers"] then
-                if imgui.BeginTable("Slayer Weapons",2) then
-                    imgui.TableSetupColumn("Slayer Type",im.ImGuiTableColumnFlags.WidthStretch,16)
-                    imgui.TableSetupColumn("Weapon Name",im.ImGuiTableColumnFlags.WidthStretch,32)
-                    imgui.TableHeader("Slayers")
-                    -- imgui.TableHeadersRow()
-                    -- TODO: Do We Need Separate Tracking For Slayers Which Are Non-Essential (Rares/Etc?)
-                    for _, category in ipairs(essentialSlayerWeapons) do
-                        local slayerGroup = slayerWeapons[category]
-                        if slayerGroup then
-                            for _, weaponID in ipairs(slayerGroup) do
-                                --- @type WorldObject
-                                local weapon = game.World.Get(weaponID)
-                                if weapon then
-                                    imgui.TableNextRow()
-                                    imgui.TableSetColumnIndex(0)
-                                    imgui.TextColored(colorgreen,tostring(category))
-                                    imgui.TableSetColumnIndex(1)
-                                    local pos = imgui.GetCursorScreenPos()
-                                    local icon = GetOrCreateTexture(weapon.DataValues[DataId.Icon])
-                                    local iconUnderlayID = weapon.DataValues[DataId.IconUnderlay]
-                                    if not iconUnderlayID then
-                                        iconUnderlayID = 0x060011CB
-                                    end
-                                    local iconUnderlayTexture = GetOrCreateTexture(iconUnderlayID)
-                                    local iconOverlay = GetOrCreateTexture(weapon.DataValues[DataId.IconOverlay])
-                                    imgui.Image(iconUnderlayTexture.TexturePtr,iconVectorSize)
-                                    imgui.SetCursorScreenPos(pos)
-                                    imgui.Image(icon.TexturePtr,iconVectorSize)
-                                    imgui.SetCursorScreenPos(pos)
-                                    imgui.Image(iconOverlay.TexturePtr,iconVectorSize)
-                                    if imgui.IsItemClicked() then
-                                        game.Actions.ObjectSelect(weapon.Id)
-                                    end
-                                    imgui.SameLine()
-                                    imgui.TextColored(colorgreen,weapon.Name)
-                                    if imgui.IsItemClicked() then
-                                        game.Actions.ObjectSelect(weapon.Id)
-                                    end
-                                end
-                            end
-                        elseif not settings.hideUnacquiredWeapons then
-                            imgui.TableNextRow()
-                            imgui.TableSetColumnIndex(0)
-                            imgui.TextColored(colorwhite,tostring(category))
-                            imgui.TableSetColumnIndex(1)
-                            imgui.TextColored(colorlightgray,"No Weapon Found")
-                        end
-                    end
-                    imgui.EndTable()
-                end
-                imgui.TreePop()
-            end
-            imgui.Separator()
-            imgui.SetNextItemOpen(treeOpenStates["Rending"] == nil or treeOpenStates["Rending"])
-            treeOpenStates["Rending"] = imgui.TreeNode("Rending / Resistance Cleaving")
-            if treeOpenStates["Rending"] then
-                if imgui.BeginTable("Rending Weapons",2) then
-                    imgui.TableSetupColumn("Rending Type",im.ImGuiTableColumnFlags.WidthStretch,16)
-                    imgui.TableSetupColumn("Weapon Name",im.ImGuiTableColumnFlags.WidthStretch,16)
-                    imgui.TableHeader("Rending")
-                    -- imgui.TableHeadersRow()
-                    -- TODO: Do We Need Separate Tracking For Slayers Which Are Non-Essential (Rares/Etc?)
-                    for rendingType, rendingInfo in pairs(trackedRendingWeapons) do
-                        local rendingGroup = rendingWeapons[rendingType]
-                        local essential = rendingInfo[3]
-                        if rendingGroup then
-                            for _, weaponID in ipairs(rendingGroup) do
-                                --- @type WorldObject
-                                local weapon = game.World.Get(weaponID)
-                                if weapon then
-                                    imgui.TableNextRow()
-                                    imgui.TableSetColumnIndex(0)
-                                    imgui.TextColored(colorgreen,rendingType)
-                                    imgui.TableSetColumnIndex(1)
-                                    local pos = imgui.GetCursorScreenPos()
-                                    local icon = GetOrCreateTexture(weapon.DataValues[DataId.Icon])
-                                    local iconUnderlayID = weapon.DataValues[DataId.IconUnderlay]
-                                    if not iconUnderlayID then
-                                        iconUnderlayID = 0x060011CB
-                                    end
-                                    local iconUnderlayTexture = GetOrCreateTexture(iconUnderlayID)
-                                    local iconOverlay = GetOrCreateTexture(weapon.DataValues[DataId.IconOverlay])
-                                    imgui.Image(iconUnderlayTexture.TexturePtr,iconVectorSize)
-                                    imgui.SetCursorScreenPos(pos)
-                                    imgui.Image(icon.TexturePtr,iconVectorSize)
-                                    imgui.SetCursorScreenPos(pos)
-                                    imgui.Image(iconOverlay.TexturePtr,iconVectorSize)
-                                    if imgui.IsItemClicked() then
-                                        game.Actions.ObjectSelect(weapon.Id)
-                                    end
-                                    imgui.SameLine()
-                                    imgui.TextColored(colorgreen,weapon.Name)
-                                    if imgui.IsItemClicked() then
-                                        game.Actions.ObjectSelect(weapon.Id)
+            for cat, types in pairs(trackedWeaponTypes) do
+                imgui.Separator()
+                imgui.SetNextItemOpen(treeOpenStates[cat] == nil or treeOpenStates[cat])
+                treeOpenStates[cat] = imgui.TreeNode(cat)
+                if treeOpenStates[cat] then
+                    if imgui.BeginTable(cat,2) then
+                        imgui.TableSetupColumn(cat,im.ImGuiTableColumnFlags.WidthStretch,16)
+                        imgui.TableSetupColumn("Weapon Name",im.ImGuiTableColumnFlags.WidthStretch,32)
+                        -- TODO: Do We Need Separate Tracking For Slayers Which Are Non-Essential (Rares/Etc?)
+                        for type, values in pairs(types) do
+                            local essential = values[3]
+                            local myWeapons = values[4]
+                            if #myWeapons > 0 then
+                                for _, weaponID in ipairs(myWeapons) do
+                                    --- @type WorldObject
+                                    local weapon = game.World.Get(weaponID)
+                                    if weapon then
+                                        imgui.TableNextRow()
+                                        imgui.TableSetColumnIndex(0)
+                                        imgui.TextColored(colorgreen,type)
+                                        imgui.TableSetColumnIndex(1)
+                                        local pos = imgui.GetCursorScreenPos()
+                                        local icon = GetOrCreateTexture(weapon.DataValues[DataId.Icon])
+                                        local iconUnderlayID = weapon.DataValues[DataId.IconUnderlay]
+                                        if not iconUnderlayID then
+                                            iconUnderlayID = 0x060011CB
+                                        end
+                                        local iconUnderlayTexture = GetOrCreateTexture(iconUnderlayID)
+                                        local iconOverlay = GetOrCreateTexture(weapon.DataValues[DataId.IconOverlay])
+                                        imgui.Image(iconUnderlayTexture.TexturePtr,iconVectorSize)
+                                        imgui.SetCursorScreenPos(pos)
+                                        imgui.Image(icon.TexturePtr,iconVectorSize)
+                                        imgui.SetCursorScreenPos(pos)
+                                        imgui.Image(iconOverlay.TexturePtr,iconVectorSize)
+                                        if imgui.IsItemClicked() then
+                                            game.Actions.ObjectSelect(weapon.Id)
+                                        end
+                                        imgui.SameLine()
+                                        imgui.TextColored(colorgreen,weapon.Name)
+                                        if imgui.IsItemClicked() then
+                                            game.Actions.ObjectSelect(weapon.Id)
+                                        end
                                     end
                                 end
+                            elseif essential and not settings.hideUnacquiredWeapons then
+                                imgui.TableNextRow()
+                                imgui.TableSetColumnIndex(0)
+                                imgui.TextColored(colorwhite,type)
+                                imgui.TableSetColumnIndex(1)
+                                imgui.TextColored(colorlightgray,"No Weapon Found")
                             end
-                        elseif essential and not settings.hideUnacquiredWeapons then
-                            imgui.TableNextRow()
-                            imgui.TableSetColumnIndex(0)
-                            imgui.TextColored(colorwhite,rendingType)
-                            imgui.TableSetColumnIndex(1)
-                            imgui.TextColored(colorlightgray,"No Weapon Found")
                         end
+                        imgui.EndTable()
                     end
-                    imgui.EndTable()
+                    imgui.TreePop()
                 end
-                imgui.TreePop()
             end
             imgui.EndTabItem()
         end
@@ -1405,5 +1306,4 @@ hud.Visible = true
 
 Quest:Refresh()
 RefreshCantrips()
-RefreshSlayers()
-RefreshRendingWeapons()
+RefreshWeapons()
