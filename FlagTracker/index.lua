@@ -2,7 +2,7 @@ local im = require("imgui")
 local ubviews = require("utilitybelt.views")
 local Quest = require("quests")
 local imgui = im.ImGui
-local version = "1.7.4"
+local version = "1.7.5"
 local currentHUDPosition = nil
 local defaultHUDposition = Vector2.new(500,100)
 local textures = {}
@@ -22,8 +22,17 @@ local settings = {
     showQuests=false,
     showFlags=true,
     hideUnacquiredWeapons=false,
-    hideMissingCantrips=false
+    hideMissingCantrips=false,
+    hideResistanceCleavingWeapons=true,
+    hideNonEssentialCreatureSlayers=true
 }
+-- Different Character Types (Returned by GetCharacterType)
+local characterTypeUnknown = 0
+local characterTypeMelee = 1
+local characterTypeArcher = 2
+local characterTypeWarMage = 3
+local characterTypeVoidMage = 4
+local characterTypeSelf = nil
 -- Maps Numeric Value to CreatureType
 local creatureTypeMap = {
     [0] = CreatureType.Invalid,
@@ -421,11 +430,11 @@ local trackedWeaponTypes = {
     ["Creature Slayer"] = {
         ["Anekshay"] = {IntId.SlayerCreatureType, CreatureType.Anekshay, true, {}},
         ["Burun"] = {IntId.SlayerCreatureType, CreatureType.Burun, true, {}},
-        ["Elemental"] = {IntId.SlayerCreatureType, CreatureType.Elemental, true, {}},
-        ["FireElemental"] = {IntId.SlayerCreatureType, CreatureType.FireElemental, true, {}},
-        ["FrostElemental"] = {IntId.SlayerCreatureType, CreatureType.FrostElemental, true, {}},
-        ["AcidElemental"] = {IntId.SlayerCreatureType, CreatureType.AcidElemental, true, {}},
-        ["LightningElemental"] = {IntId.SlayerCreatureType, CreatureType.LightningElemental, true, {}},
+        ["Elemental"] = {IntId.SlayerCreatureType, CreatureType.Elemental, false, {}},
+        ["FireElemental"] = {IntId.SlayerCreatureType, CreatureType.FireElemental, false, {}},
+        ["FrostElemental"] = {IntId.SlayerCreatureType, CreatureType.FrostElemental, false, {}},
+        ["AcidElemental"] = {IntId.SlayerCreatureType, CreatureType.AcidElemental, false, {}},
+        ["LightningElemental"] = {IntId.SlayerCreatureType, CreatureType.LightningElemental, false, {}},
         ["Ghost"] = {IntId.SlayerCreatureType, CreatureType.Ghost, true, {}},
         ["Human"] = {IntId.SlayerCreatureType, CreatureType.Human, true, {}},
         ["Mukkir"] = {IntId.SlayerCreatureType, CreatureType.Mukkir, true, {}},
@@ -439,21 +448,21 @@ local trackedWeaponTypes = {
     ["Rending / Resistance Cleaving"] = {
         ["Critical Strike"] = {IntId.ImbuedEffect, 1, true,{}},
         ["Crippling Blow"] = {IntId.ImbuedEffect, 2, true,{}},
-        ["Armor Rending"] = {IntId.ImbuedEffect, 4, true,{}},
-        ["Slash Rending"] = {IntId.ImbuedEffect, 8, true,{}},
-        ["Resistance Cleaving: Slash "] = {IntId.ResistanceModifierType, 1, false,{}},
-        ["Pierce Rending"] = {IntId.ImbuedEffect, 16, true,{}},
-        ["Resistance Cleaving: Pierce"] = {IntId.ResistanceModifierType, 2, false,{}},
-        ["Bludgeon Rending"] = {IntId.ImbuedEffect, 32, true,{}},
-        ["Resistance Cleaving: Bludgeon"] = {IntId.ResistanceModifierType, 4, false,{}},
-        ["Cold Rending"] = {IntId.ImbuedEffect, 128, true,{}},
-        ["Resistance Cleaving: Cold"] = {IntId.ResistanceModifierType, 8, false,{}},
-        ["Fire Rending"] = {IntId.ImbuedEffect, 512, true,{}},
-        ["Resistance Cleaving: Fire"] = {IntId.ResistanceModifierType, 16, false,{}},
-        ["Acid Rending"] = {IntId.ImbuedEffect, 64, true,{}},
-        ["Resistance Cleaving: Acid"] = {IntId.ResistanceModifierType, 32, false,{}},
-        ["Electric Rending"] = {IntId.ImbuedEffect, 256, true,{}},
-        ["Resistance Cleaving: Electric"] = {IntId.ResistanceModifierType, 64, false,{}}
+        ["Armor Rending"] = {IntId.ImbuedEffect, 4, true,{},{characterTypeWarMage,characterTypeVoidMage}},
+        ["Slash Rending"] = {IntId.ImbuedEffect, 8, true,{},{characterTypeVoidMage}},
+        ["Resistance Cleaving: Slash "] = {IntId.ResistanceModifierType, 1, false,{},{characterTypeVoidMage}},
+        ["Pierce Rending"] = {IntId.ImbuedEffect, 16, true,{},{characterTypeVoidMage}},
+        ["Resistance Cleaving: Pierce"] = {IntId.ResistanceModifierType, 2, false,{},{characterTypeVoidMage}},
+        ["Bludgeon Rending"] = {IntId.ImbuedEffect, 32, true,{},{characterTypeVoidMage}},
+        ["Resistance Cleaving: Bludgeon"] = {IntId.ResistanceModifierType, 4, false,{},{characterTypeVoidMage}},
+        ["Cold Rending"] = {IntId.ImbuedEffect, 128, true,{},{characterTypeVoidMage}},
+        ["Resistance Cleaving: Cold"] = {IntId.ResistanceModifierType, 8, false,{},{characterTypeVoidMage}},
+        ["Fire Rending"] = {IntId.ImbuedEffect, 512, true,{},{characterTypeVoidMage}},
+        ["Resistance Cleaving: Fire"] = {IntId.ResistanceModifierType, 16, false,{},{characterTypeVoidMage}},
+        ["Acid Rending"] = {IntId.ImbuedEffect, 64, true,{},{characterTypeVoidMage}},
+        ["Resistance Cleaving: Acid"] = {IntId.ResistanceModifierType, 32, false,{},{characterTypeVoidMage}},
+        ["Electric Rending"] = {IntId.ImbuedEffect, 256, true,{},{characterTypeVoidMage}},
+        ["Resistance Cleaving: Electric"] = {IntId.ResistanceModifierType, 64, false,{},{characterTypeVoidMage}}
     }
 }
 
@@ -565,8 +574,27 @@ local function RefreshWeaponsFromInventory(inventory)
     end
 end
 
+-- Returns the Type of Character of the Player
+local function GetCharacterType()
+    --- @type Character
+    local char = game.Character
+    if char == nil then return characterTypeUnknown end
+    local weenie = char.Weenie
+    if weenie == nil then return characterTypeUnknown end
+    if weenie.Skills[SkillId.VoidMagic].Training == SkillTrainingType.Specialized then return characterTypeVoidMage end
+    if weenie.Skills[SkillId.WarMagic].Training == SkillTrainingType.Specialized then return characterTypeWarMage end
+    if weenie.Skills[SkillId.WarMagic].Training == SkillTrainingType.Trained then return characterTypeWarMage end
+    if weenie.Skills[SkillId.MissleWeapons].Training == SkillTrainingType.Specialized then return characterTypeArcher end
+    if weenie.Skills[SkillId.HeavyWeapons].Training == SkillTrainingType.Specialized 
+        or weenie.Skills[SkillId.LightWeapons].Training == SkillTrainingType.Specialized 
+        or weenie.Skills[SkillId.FinesseWeapons].Training == SkillTrainingType.Specialized
+        or weenie.Skills[SkillId.TwoHandedCombat].Training == SkillTrainingType.Specialized then return characterTypeMelee end
+    return characterTypeUnknown
+end
+
 -- Refresh and Populate Weapons Using Above Function
 local function RefreshWeapons()
+    characterTypeSelf = GetCharacterType()
     for _, types in pairs(trackedWeaponTypes) do
         for _, values in pairs(types) do
             -- Reset Table That Holds Player Weapons
@@ -1151,44 +1179,56 @@ hud.OnRender.Add(function()
                         for type, values in pairs(types) do
                             local essential = values[3]
                             local myWeapons = values[4]
-                            if #myWeapons > 0 then
-                                for _, weaponID in ipairs(myWeapons) do
-                                    --- @type WorldObject
-                                    local weapon = game.World.Get(weaponID)
-                                    if weapon then
-                                        imgui.TableNextRow()
-                                        imgui.TableSetColumnIndex(0)
-                                        imgui.TextColored(colorgreen,type)
-                                        imgui.TableSetColumnIndex(1)
-                                        local pos = imgui.GetCursorScreenPos()
-                                        local icon = GetOrCreateTexture(weapon.DataValues[DataId.Icon])
-                                        local iconUnderlayID = weapon.DataValues[DataId.IconUnderlay]
-                                        if not iconUnderlayID then
-                                            iconUnderlayID = 0x060011CB
-                                        end
-                                        local iconUnderlayTexture = GetOrCreateTexture(iconUnderlayID)
-                                        local iconOverlay = GetOrCreateTexture(weapon.DataValues[DataId.IconOverlay])
-                                        imgui.Image(iconUnderlayTexture.TexturePtr,iconVectorSize)
-                                        imgui.SetCursorScreenPos(pos)
-                                        imgui.Image(icon.TexturePtr,iconVectorSize)
-                                        imgui.SetCursorScreenPos(pos)
-                                        imgui.Image(iconOverlay.TexturePtr,iconVectorSize)
-                                        if imgui.IsItemClicked() then
-                                            game.Actions.ObjectSelect(weapon.Id)
-                                        end
-                                        imgui.SameLine()
-                                        imgui.TextColored(colorgreen,weapon.Name)
-                                        if imgui.IsItemClicked() then
-                                            game.Actions.ObjectSelect(weapon.Id)
-                                        end
+                            local skipCharacterTypes = values[5]
+                            local skip = ((cat == "Rending / Resistance Cleaving") and (not essential) and settings.hideResistanceCleavingWeapons)
+                                or ((cat == "Creature Slayer") and (not essential) and settings.hideNonEssentialCreatureSlayers)
+                            if skipCharacterTypes then
+                                for _, ctype in ipairs(skipCharacterTypes) do
+                                    if characterTypeSelf == ctype then
+                                        skip = true
                                     end
                                 end
-                            elseif essential and not settings.hideUnacquiredWeapons then
-                                imgui.TableNextRow()
-                                imgui.TableSetColumnIndex(0)
-                                imgui.TextColored(colorwhite,type)
-                                imgui.TableSetColumnIndex(1)
-                                imgui.TextColored(colorlightgray,"No Weapon Found")
+                            end
+                            if not skip then
+                                if #myWeapons > 0 then
+                                    for _, weaponID in ipairs(myWeapons) do
+                                        --- @type WorldObject
+                                        local weapon = game.World.Get(weaponID)
+                                        if weapon then
+                                            imgui.TableNextRow()
+                                            imgui.TableSetColumnIndex(0)
+                                            imgui.TextColored(colorgreen,type)
+                                            imgui.TableSetColumnIndex(1)
+                                            local pos = imgui.GetCursorScreenPos()
+                                            local icon = GetOrCreateTexture(weapon.DataValues[DataId.Icon])
+                                            local iconUnderlayID = weapon.DataValues[DataId.IconUnderlay]
+                                            if not iconUnderlayID then
+                                                iconUnderlayID = 0x060011CB
+                                            end
+                                            local iconUnderlayTexture = GetOrCreateTexture(iconUnderlayID)
+                                            local iconOverlay = GetOrCreateTexture(weapon.DataValues[DataId.IconOverlay])
+                                            imgui.Image(iconUnderlayTexture.TexturePtr,iconVectorSize)
+                                            imgui.SetCursorScreenPos(pos)
+                                            imgui.Image(icon.TexturePtr,iconVectorSize)
+                                            imgui.SetCursorScreenPos(pos)
+                                            imgui.Image(iconOverlay.TexturePtr,iconVectorSize)
+                                            if imgui.IsItemClicked() then
+                                                game.Actions.ObjectSelect(weapon.Id)
+                                            end
+                                            imgui.SameLine()
+                                            imgui.TextColored(colorgreen,weapon.Name)
+                                            if imgui.IsItemClicked() then
+                                                game.Actions.ObjectSelect(weapon.Id)
+                                            end
+                                        end
+                                    end
+                                elseif not settings.hideUnacquiredWeapons then
+                                    imgui.TableNextRow()
+                                    imgui.TableSetColumnIndex(0)
+                                    imgui.TextColored(colorwhite,type)
+                                    imgui.TableSetColumnIndex(1)
+                                    imgui.TextColored(colorlightgray,"No Weapon Found")
+                                end
                             end
                         end
                         imgui.EndTable()
@@ -1286,6 +1326,12 @@ hud.OnRender.Add(function()
             end
             if imgui.Checkbox("Hide Unacquired Weapons",settings.hideUnacquiredWeapons) then
                 settings.hideUnacquiredWeapons = not settings.hideUnacquiredWeapons
+            end
+            if imgui.Checkbox("Hide Resistance Cleaving Weapons",settings.hideResistanceCleavingWeapons) then
+                settings.hideResistanceCleavingWeapons = not settings.hideResistanceCleavingWeapons
+            end
+            if imgui.Checkbox("Hide Non-Essential Slayer Weapons",settings.hideNonEssentialCreatureSlayers) then
+                settings.hideNonEssentialCreatureSlayers = not settings.hideNonEssentialCreatureSlayers
             end
             if imgui.Checkbox("Hide Missing Cantrips",settings.hideMissingCantrips) then
                 settings.hideMissingCantrips = not settings.hideMissingCantrips
