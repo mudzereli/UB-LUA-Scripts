@@ -7,6 +7,14 @@ local currentHUDPosition = nil
 local defaultHUDposition = Vector2.new(500,100)
 local textures = {}
 
+--[[
+    TODO / POTENTIAL WORK LIST
+    - Clean Up / Speed Up Code
+    - Add Damage Colors To Weapon Types
+    - Tracking for Biting Strike / Crushing Blow / Armor Cleaving
+    - Better Tooltips
+]]--
+
 local colorwhite = Vector4.new(1,1,1,1)
 local coloryellow = Vector4.new(1,1,0,1)
 local colorred = Vector4.new(1,0,0,1)
@@ -26,13 +34,33 @@ local settings = {
     hideResistanceCleavingWeapons=true,
     hideNonEssentialCreatureSlayers=true
 }
--- Different Character Types (Returned by GetCharacterType)
-local characterTypeUnknown = 0
-local characterTypeMelee = 1
-local characterTypeArcher = 2
-local characterTypeWarMage = 3
-local characterTypeVoidMage = 4
 local characterTypeSelf = nil
+-- Different Character Types (Returned by GetCharacterType)
+local CharacterType = {
+    Unknown = 0,
+    Melee = 1,
+    Archer = 2,
+    WarMage = 3,
+    VoidMage = 4
+}
+-- Returns the Type of Character of the Player
+local function GetCharacterType()
+    --- @type Character
+    local char = game.Character
+    if char == nil then return CharacterType.Unknown end
+    local weenie = char.Weenie
+    if weenie == nil then return CharacterType.Unknown end
+    if weenie.Skills[SkillId.VoidMagic].Training == SkillTrainingType.Specialized then return CharacterType.VoidMage end
+    if weenie.Skills[SkillId.WarMagic].Training == SkillTrainingType.Specialized then return CharacterType.WarMage end
+    if weenie.Skills[SkillId.WarMagic].Training == SkillTrainingType.Trained then return CharacterType.WarMage end
+    if weenie.Skills[SkillId.MissleWeapons].Training == SkillTrainingType.Specialized then return CharacterType.Archer end
+    if weenie.Skills[SkillId.HeavyWeapons].Training == SkillTrainingType.Specialized 
+        or weenie.Skills[SkillId.LightWeapons].Training == SkillTrainingType.Specialized 
+        or weenie.Skills[SkillId.FinesseWeapons].Training == SkillTrainingType.Specialized
+        or weenie.Skills[SkillId.TwoHandedCombat].Training == SkillTrainingType.Specialized then return CharacterType.Melee end
+    return CharacterType.Unknown
+end
+
 -- Maps Numeric Value to CreatureType
 local creatureTypeMap = {
     [0] = CreatureType.Invalid,
@@ -138,17 +166,6 @@ local creatureTypeMap = {
     [100] = CreatureType.Gurog,
     [101] = CreatureType.Anekshay
 }
--- Maps Damage Type to Value
-local damageTypeMap = {
-    [0] = "Undefined",
-    [1] = "Slash",
-    [2] = "Pierce",
-    [4] = "Bludgeon",
-    [8] = "Cold",
-    [16] = "Fire",
-    [32] = "Acid",
-    [64] = "Electric"
-}
 -- State Tracking for Tree Nodes
 local treeOpenStates = {
     ["Stat Augs"] = false,
@@ -156,6 +173,10 @@ local treeOpenStates = {
 }
 -- Tree Layout for Augmentation Tab
 local augmentations = {
+    -- 1 = Augmentation Name
+    -- 2 = Augmentation Int ID
+    -- 3 = NPC Trainer
+    -- 4 = NPC Trainer Location
     ["Death Augs"] = {
         {"Keep Items",IntId.AugmentationLessDeathItemLoss,3,"Rohula bint Ludun","Ayan Baqur"},
         {"Keep Spells",IntId.AugmentationSpellsRemainPastDeath,1,"Erik Festus","Ayan Baqur"}
@@ -220,6 +241,10 @@ local augmentations = {
 }
 -- Tree Layout for Luminance Auras
 local luminanceauras = {
+    -- 1 = Luminance Aura Name
+    -- 2 = Luminance Aura IntID
+    -- 3 = Luminance Aura Cap
+    -- 4 (Seer Auras Only) = Luminance Aura QuestFlag
     ["Nalicana Auras"] = {
         {"+1 Aetheria Proc Rating",IntId.LumAugSurgeChanceRating,5},
         {"+1 Damage Reduction Rating",IntId.LumAugDamageReductionRating,5},
@@ -448,21 +473,21 @@ local trackedWeaponTypes = {
     ["Rending / Resistance Cleaving"] = {
         ["Critical Strike"] = {IntId.ImbuedEffect, 1, true,{}},
         ["Crippling Blow"] = {IntId.ImbuedEffect, 2, true,{}},
-        ["Armor Rending"] = {IntId.ImbuedEffect, 4, true,{},{characterTypeWarMage,characterTypeVoidMage}},
-        ["Slash Rending"] = {IntId.ImbuedEffect, 8, true,{},{characterTypeVoidMage}},
-        ["Resistance Cleaving: Slash "] = {IntId.ResistanceModifierType, 1, false,{},{characterTypeVoidMage}},
-        ["Pierce Rending"] = {IntId.ImbuedEffect, 16, true,{},{characterTypeVoidMage}},
-        ["Resistance Cleaving: Pierce"] = {IntId.ResistanceModifierType, 2, false,{},{characterTypeVoidMage}},
-        ["Bludgeon Rending"] = {IntId.ImbuedEffect, 32, true,{},{characterTypeVoidMage}},
-        ["Resistance Cleaving: Bludgeon"] = {IntId.ResistanceModifierType, 4, false,{},{characterTypeVoidMage}},
-        ["Cold Rending"] = {IntId.ImbuedEffect, 128, true,{},{characterTypeVoidMage}},
-        ["Resistance Cleaving: Cold"] = {IntId.ResistanceModifierType, 8, false,{},{characterTypeVoidMage}},
-        ["Fire Rending"] = {IntId.ImbuedEffect, 512, true,{},{characterTypeVoidMage}},
-        ["Resistance Cleaving: Fire"] = {IntId.ResistanceModifierType, 16, false,{},{characterTypeVoidMage}},
-        ["Acid Rending"] = {IntId.ImbuedEffect, 64, true,{},{characterTypeVoidMage}},
-        ["Resistance Cleaving: Acid"] = {IntId.ResistanceModifierType, 32, false,{},{characterTypeVoidMage}},
-        ["Electric Rending"] = {IntId.ImbuedEffect, 256, true,{},{characterTypeVoidMage}},
-        ["Resistance Cleaving: Electric"] = {IntId.ResistanceModifierType, 64, false,{},{characterTypeVoidMage}}
+        ["Armor Rending"] = {IntId.ImbuedEffect, 4, true,{},{CharacterType.WarMage,CharacterType.VoidMage}},
+        ["Slash Rending"] = {IntId.ImbuedEffect, 8, true,{},{CharacterType.VoidMage}},
+        ["Resistance Cleaving: Slash "] = {IntId.ResistanceModifierType, 1, false,{},{CharacterType.VoidMage}},
+        ["Pierce Rending"] = {IntId.ImbuedEffect, 16, true,{},{CharacterType.VoidMage}},
+        ["Resistance Cleaving: Pierce"] = {IntId.ResistanceModifierType, 2, false,{},{CharacterType.VoidMage}},
+        ["Bludgeon Rending"] = {IntId.ImbuedEffect, 32, true,{},{CharacterType.VoidMage}},
+        ["Resistance Cleaving: Bludgeon"] = {IntId.ResistanceModifierType, 4, false,{},{CharacterType.VoidMage}},
+        ["Cold Rending"] = {IntId.ImbuedEffect, 128, true,{},{CharacterType.VoidMage}},
+        ["Resistance Cleaving: Cold"] = {IntId.ResistanceModifierType, 8, false,{},{CharacterType.VoidMage}},
+        ["Fire Rending"] = {IntId.ImbuedEffect, 512, true,{},{CharacterType.VoidMage}},
+        ["Resistance Cleaving: Fire"] = {IntId.ResistanceModifierType, 16, false,{},{CharacterType.VoidMage}},
+        ["Acid Rending"] = {IntId.ImbuedEffect, 64, true,{},{CharacterType.VoidMage}},
+        ["Resistance Cleaving: Acid"] = {IntId.ResistanceModifierType, 32, false,{},{CharacterType.VoidMage}},
+        ["Electric Rending"] = {IntId.ImbuedEffect, 256, true,{},{CharacterType.VoidMage}},
+        ["Resistance Cleaving: Electric"] = {IntId.ResistanceModifierType, 64, false,{},{CharacterType.VoidMage}}
     }
 }
 
@@ -485,6 +510,7 @@ end
 
 -- Refresh and Populate Cantrips
 local function RefreshCantrips() 
+    characterTypeSelf = GetCharacterType()
     for id, sk in pairs(game.Character.Weenie.Skills) do
         local skillName = skillcantripreplacements[id]
         if skillName == nil then
@@ -572,24 +598,6 @@ local function RefreshWeaponsFromInventory(inventory)
             end
         end
     end
-end
-
--- Returns the Type of Character of the Player
-local function GetCharacterType()
-    --- @type Character
-    local char = game.Character
-    if char == nil then return characterTypeUnknown end
-    local weenie = char.Weenie
-    if weenie == nil then return characterTypeUnknown end
-    if weenie.Skills[SkillId.VoidMagic].Training == SkillTrainingType.Specialized then return characterTypeVoidMage end
-    if weenie.Skills[SkillId.WarMagic].Training == SkillTrainingType.Specialized then return characterTypeWarMage end
-    if weenie.Skills[SkillId.WarMagic].Training == SkillTrainingType.Trained then return characterTypeWarMage end
-    if weenie.Skills[SkillId.MissleWeapons].Training == SkillTrainingType.Specialized then return characterTypeArcher end
-    if weenie.Skills[SkillId.HeavyWeapons].Training == SkillTrainingType.Specialized 
-        or weenie.Skills[SkillId.LightWeapons].Training == SkillTrainingType.Specialized 
-        or weenie.Skills[SkillId.FinesseWeapons].Training == SkillTrainingType.Specialized
-        or weenie.Skills[SkillId.TwoHandedCombat].Training == SkillTrainingType.Specialized then return characterTypeMelee end
-    return characterTypeUnknown
 end
 
 -- Refresh and Populate Weapons Using Above Function
@@ -1160,7 +1168,7 @@ hud.OnRender.Add(function()
             imgui.EndTabItem()
         end
 
-        -- Slayers Tab
+        -- Weapons Tab
         if imgui.BeginTabItem("Weapons") then
             if imgui.Button("Refresh") then
                 RefreshWeapons()
