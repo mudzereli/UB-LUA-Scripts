@@ -5,6 +5,8 @@ local imgui = im.ImGui
 local version = "1.7.5"
 local currentHUDPosition = nil
 local defaultHUDposition = Vector2.new(500,100)
+local iconVectorSize = Vector2.new(16,16)
+local characterTypeSelf = nil
 local textures = {}
 
 --[[
@@ -15,13 +17,27 @@ local textures = {}
     - Better Tooltips
 ]]--
 
-local colorwhite = Vector4.new(1,1,1,1)
-local coloryellow = Vector4.new(1,1,0,1)
-local colorred = Vector4.new(1,0,0,1)
-local colorgreen = Vector4.new(0,1,0,1)
-local colorlightgray = Vector4.new(0.7, 0.7, 0.7, 1)
-local iconVectorSize = Vector2.new(16,16)
+-- LUA Table for Color Codes
+local Colors = {
+    Red = Vector4.new(1, 0, 0, 1),
+    SoftRed = Vector4.new(1, 0.5, 0.5, 1),
+    Orange = Vector4.new(1, 0.7, 0.4, 1),
+    SoftOrange = Vector4.new(1, 0.7, 0.2, 1),
+    Yellow = Vector4.new(1, 1, 0, 1),
+    SoftYellow = Vector4.new(1, 1, 0.5, 1),
+    Green = Vector4.new(0, 1, 0, 1),
+    SoftGreen = Vector4.new(0.3, 1, 0.3, 1),
+    SofterGreen = Vector4.new(0.5, 1, 0.5, 1),
+    LightBlue = Vector4.new(0.3, 0.6, 1, 1),
+    SoftBlue = Vector4.new(0.5, 0.7, 1, 1),
+    SoftPurple = Vector4.new(0.8, 0.5, 1, 1),
+    BrightPurple = Vector4.new(0.8, 0.3, 1, 1),
 
+    White = Vector4.new(1, 1, 1, 1),
+    LightGray = Vector4.new(0.7, 0.7, 0.7, 1),
+    DarkGray = Vector4.new(0.6, 0.6, 0.6, 1)
+}
+-- Holds Script-Wide Settings
 local settings = {
     showLuminance = true,
     showRecallSpells = true,
@@ -34,7 +50,6 @@ local settings = {
     hideResistanceCleavingWeapons=true,
     hideNonEssentialCreatureSlayers=true
 }
-local characterTypeSelf = nil
 -- Different Character Types (Returned by GetCharacterType)
 local CharacterType = {
     Unknown = 0,
@@ -43,24 +58,6 @@ local CharacterType = {
     WarMage = 3,
     VoidMage = 4
 }
--- Returns the Type of Character of the Player
-local function GetCharacterType()
-    --- @type Character
-    local char = game.Character
-    if char == nil then return CharacterType.Unknown end
-    local weenie = char.Weenie
-    if weenie == nil then return CharacterType.Unknown end
-    if weenie.Skills[SkillId.VoidMagic].Training == SkillTrainingType.Specialized then return CharacterType.VoidMage end
-    if weenie.Skills[SkillId.WarMagic].Training == SkillTrainingType.Specialized then return CharacterType.WarMage end
-    if weenie.Skills[SkillId.WarMagic].Training == SkillTrainingType.Trained then return CharacterType.WarMage end
-    if weenie.Skills[SkillId.MissleWeapons].Training == SkillTrainingType.Specialized then return CharacterType.Archer end
-    if weenie.Skills[SkillId.HeavyWeapons].Training == SkillTrainingType.Specialized 
-        or weenie.Skills[SkillId.LightWeapons].Training == SkillTrainingType.Specialized 
-        or weenie.Skills[SkillId.FinesseWeapons].Training == SkillTrainingType.Specialized
-        or weenie.Skills[SkillId.TwoHandedCombat].Training == SkillTrainingType.Specialized then return CharacterType.Melee end
-    return CharacterType.Unknown
-end
-
 -- Maps Numeric Value to CreatureType
 local creatureTypeMap = {
     [0] = CreatureType.Invalid,
@@ -419,32 +416,32 @@ local cantripmap = {
     ["Specialized Skills"] = {},
     ["Trained Skills"] = {},
     ["Attributes"] = {
-        ["Strength"] = { value = "N/A", color = colorwhite, spellIcon = SpellId.StrengthSelf8, iconBackground = 0x060013F9},
-        ["Endurance"] = { value = "N/A", color = colorwhite, spellIcon = SpellId.EnduranceSelf8, iconBackground = 0x060013F9},
-        ["Coordination"] = { value = "N/A", color = colorwhite, spellIcon = SpellId.CoordinationSelf8, iconBackground = 0x060013F9},
-        ["Quickness"] = { value = "N/A", color = colorwhite, spellIcon = SpellId.QuicknessSelf8, iconBackground = 0x060013F9},
-        ["Focus"] = { value = "N/A", color = colorwhite, spellIcon = SpellId.FocusSelf8, iconBackground = 0x060013F9},
-        ["Willpower"] = { value = "N/A", color = colorwhite, spellIcon = SpellId.WillpowerSelf8, iconBackground = 0x060013F9}
+        ["Strength"] = { value = "N/A", color = Colors.White, spellIcon = SpellId.StrengthSelf8, iconBackground = 0x060013F9},
+        ["Endurance"] = { value = "N/A", color = Colors.White, spellIcon = SpellId.EnduranceSelf8, iconBackground = 0x060013F9},
+        ["Coordination"] = { value = "N/A", color = Colors.White, spellIcon = SpellId.CoordinationSelf8, iconBackground = 0x060013F9},
+        ["Quickness"] = { value = "N/A", color = Colors.White, spellIcon = SpellId.QuicknessSelf8, iconBackground = 0x060013F9},
+        ["Focus"] = { value = "N/A", color = Colors.White, spellIcon = SpellId.FocusSelf8, iconBackground = 0x060013F9},
+        ["Willpower"] = { value = "N/A", color = Colors.White, spellIcon = SpellId.WillpowerSelf8, iconBackground = 0x060013F9}
     },
     ["Protection Auras"] = {
-        ["Armor"] = { value = "N/A", color = Vector4.new(0.6, 0.6, 0.6, 1), spellIcon = SpellId.ArmorSelf8}, -- Light Gray
-        ["Bludgeoning Ward"] = { value = "N/A", color = Vector4.new(0.7, 0.7, 0.7, 1), spellIcon = SpellId.BludgeonProtectionSelf8}, -- Soft Gray
-        ["Piercing Ward"] = { value = "N/A", color = Vector4.new(1, 1, 0.5, 1), spellIcon = SpellId.PiercingProtectionSelf8}, -- Pastel Yellow
-        ["Slashing Ward"] = { value = "N/A", color = Vector4.new(1, 0.7, 0.4, 1), spellIcon = SpellId.BladeProtectionSelf8}, -- Pastel Orange
-        ["Flame Ward"] = { value = "N/A", color = Vector4.new(1, 0.5, 0.5, 1), spellIcon = SpellId.FireProtectionSelf8}, -- Soft Red
-        ["Frost Ward"] = { value = "N/A", color = Vector4.new(0.5, 0.7, 1, 1), spellIcon = SpellId.ColdProtectionSelf8}, -- Pastel Blue
-        ["Acid Ward"] = { value = "N/A", color = Vector4.new(0.5, 1, 0.5, 1), spellIcon = SpellId.AcidProtectionSelf8}, -- Soft Green
-        ["Storm Ward"] = { value = "N/A", color = Vector4.new(0.8, 0.5, 1, 1), spellIcon = SpellId.LightningProtectionSelf8} -- Pastel Purple
+        ["Armor"] = { value = "N/A", color = Colors.DarkGray, spellIcon = SpellId.ArmorSelf8}, -- Light Gray
+        ["Bludgeoning Ward"] = { value = "N/A", color = Colors.LightGray, spellIcon = SpellId.BludgeonProtectionSelf8}, -- Soft Gray
+        ["Piercing Ward"] = { value = "N/A", color = Colors.SoftYellow, spellIcon = SpellId.PiercingProtectionSelf8}, -- Pastel Yellow
+        ["Slashing Ward"] = { value = "N/A", color = Colors.Orange, spellIcon = SpellId.BladeProtectionSelf8}, -- Pastel Orange
+        ["Flame Ward"] = { value = "N/A", color = Colors.SoftRed, spellIcon = SpellId.FireProtectionSelf8}, -- Soft Red
+        ["Frost Ward"] = { value = "N/A", color = Colors.SoftBlue, spellIcon = SpellId.ColdProtectionSelf8}, -- Pastel Blue
+        ["Acid Ward"] = { value = "N/A", color = Colors.SofterGreen, spellIcon = SpellId.AcidProtectionSelf8}, -- Soft Green
+        ["Storm Ward"] = { value = "N/A", color = Colors.SoftPurple, spellIcon = SpellId.LightningProtectionSelf8} -- Pastel Purple
     }
 }
 -- Color Map for Cantrip Levels
 local cantriptypes = {
-    ["N/A"] = colorlightgray, -- Lighter Gray
-    ["Minor"] = Vector4.new(1, 1, 1, 1), -- White (still fine)
-    ["Moderate"] = Vector4.new(0.3, 1, 0.3, 1), -- Softer Green
-    ["Major"] = Vector4.new(0.3, 0.6, 1, 1), -- Lighter Blue
-    ["Epic"] = Vector4.new(0.8, 0.3, 1, 1), -- Brighter Purple
-    ["Legendary"] = Vector4.new(1, 0.7, 0.2, 1) -- Softer Orange    
+    ["N/A"] = Colors.LightGray,
+    ["Minor"] = Colors.White,
+    ["Moderate"] = Colors.SoftGreen,
+    ["Major"] = Colors.LightBlue,
+    ["Epic"] = Colors.BrightPurple,
+    ["Legendary"] = Colors.SoftOrange
 }
 -- Skill Replacement for Cantrips That Have Different Names Than Their Skill
 local skillcantripreplacements = {
@@ -453,43 +450,61 @@ local skillcantripreplacements = {
 }
 local trackedWeaponTypes = {
     ["Creature Slayer"] = {
-        ["Anekshay"] = {IntId.SlayerCreatureType, CreatureType.Anekshay, true, {}},
-        ["Burun"] = {IntId.SlayerCreatureType, CreatureType.Burun, true, {}},
+        ["Tumerok"] = {IntId.SlayerCreatureType, CreatureType.Tumerok, true, {}},
+        ["Olthoi"] = {IntId.SlayerCreatureType, CreatureType.Olthoi, true, {}},
+        ["Ghost"] = {IntId.SlayerCreatureType, CreatureType.Ghost, true, {}},
+        ["Human"] = {IntId.SlayerCreatureType, CreatureType.Human, true, {}},
         ["Elemental"] = {IntId.SlayerCreatureType, CreatureType.Elemental, false, {}},
         ["FireElemental"] = {IntId.SlayerCreatureType, CreatureType.FireElemental, false, {}},
         ["FrostElemental"] = {IntId.SlayerCreatureType, CreatureType.FrostElemental, false, {}},
         ["AcidElemental"] = {IntId.SlayerCreatureType, CreatureType.AcidElemental, false, {}},
         ["LightningElemental"] = {IntId.SlayerCreatureType, CreatureType.LightningElemental, false, {}},
-        ["Ghost"] = {IntId.SlayerCreatureType, CreatureType.Ghost, true, {}},
-        ["Human"] = {IntId.SlayerCreatureType, CreatureType.Human, true, {}},
-        ["Mukkir"] = {IntId.SlayerCreatureType, CreatureType.Mukkir, true, {}},
-        ["Olthoi"] = {IntId.SlayerCreatureType, CreatureType.Olthoi, true, {}},
         ["Shadow"] = {IntId.SlayerCreatureType, CreatureType.Shadow, true, {}},
-        ["Skeleton"] = {IntId.SlayerCreatureType, CreatureType.Skeleton, true, {}},
-        ["Tumerok"] = {IntId.SlayerCreatureType, CreatureType.Tumerok, true, {}},
-        ["Undead"] = {IntId.SlayerCreatureType, CreatureType.Undead, true, {}},
         ["Virindi"] = {IntId.SlayerCreatureType, CreatureType.Virindi, true, {}},
+        ["Anekshay"] = {IntId.SlayerCreatureType, CreatureType.Anekshay, true, {}},
+        ["Burun"] = {IntId.SlayerCreatureType, CreatureType.Burun, true, {}},
+        ["Mukkir"] = {IntId.SlayerCreatureType, CreatureType.Mukkir, true, {}},
+        ["Skeleton"] = {IntId.SlayerCreatureType, CreatureType.Skeleton, true, {}},
+        ["Undead"] = {IntId.SlayerCreatureType, CreatureType.Undead, true, {}},
     },
     ["Rending / Resistance Cleaving"] = {
         ["Critical Strike"] = {IntId.ImbuedEffect, 1, true,{}},
         ["Crippling Blow"] = {IntId.ImbuedEffect, 2, true,{}},
         ["Armor Rending"] = {IntId.ImbuedEffect, 4, true,{},{CharacterType.WarMage,CharacterType.VoidMage}},
         ["Slash Rending"] = {IntId.ImbuedEffect, 8, true,{},{CharacterType.VoidMage}},
-        ["Resistance Cleaving: Slash "] = {IntId.ResistanceModifierType, 1, false,{},{CharacterType.VoidMage}},
         ["Pierce Rending"] = {IntId.ImbuedEffect, 16, true,{},{CharacterType.VoidMage}},
-        ["Resistance Cleaving: Pierce"] = {IntId.ResistanceModifierType, 2, false,{},{CharacterType.VoidMage}},
         ["Bludgeon Rending"] = {IntId.ImbuedEffect, 32, true,{},{CharacterType.VoidMage}},
-        ["Resistance Cleaving: Bludgeon"] = {IntId.ResistanceModifierType, 4, false,{},{CharacterType.VoidMage}},
         ["Cold Rending"] = {IntId.ImbuedEffect, 128, true,{},{CharacterType.VoidMage}},
-        ["Resistance Cleaving: Cold"] = {IntId.ResistanceModifierType, 8, false,{},{CharacterType.VoidMage}},
         ["Fire Rending"] = {IntId.ImbuedEffect, 512, true,{},{CharacterType.VoidMage}},
-        ["Resistance Cleaving: Fire"] = {IntId.ResistanceModifierType, 16, false,{},{CharacterType.VoidMage}},
         ["Acid Rending"] = {IntId.ImbuedEffect, 64, true,{},{CharacterType.VoidMage}},
-        ["Resistance Cleaving: Acid"] = {IntId.ResistanceModifierType, 32, false,{},{CharacterType.VoidMage}},
         ["Electric Rending"] = {IntId.ImbuedEffect, 256, true,{},{CharacterType.VoidMage}},
+        ["Resistance Cleaving: Slash "] = {IntId.ResistanceModifierType, 1, false,{},{CharacterType.VoidMage}},
+        ["Resistance Cleaving: Pierce"] = {IntId.ResistanceModifierType, 2, false,{},{CharacterType.VoidMage}},
+        ["Resistance Cleaving: Bludgeon"] = {IntId.ResistanceModifierType, 4, false,{},{CharacterType.VoidMage}},
+        ["Resistance Cleaving: Cold"] = {IntId.ResistanceModifierType, 8, false,{},{CharacterType.VoidMage}},
+        ["Resistance Cleaving: Fire"] = {IntId.ResistanceModifierType, 16, false,{},{CharacterType.VoidMage}},
+        ["Resistance Cleaving: Acid"] = {IntId.ResistanceModifierType, 32, false,{},{CharacterType.VoidMage}},
         ["Resistance Cleaving: Electric"] = {IntId.ResistanceModifierType, 64, false,{},{CharacterType.VoidMage}}
     }
 }
+
+-- Returns the Type of Character of the Player
+local function GetCharacterType()
+    --- @type Character
+    local char = game.Character
+    if char == nil then return CharacterType.Unknown end
+    local weenie = char.Weenie
+    if weenie == nil then return CharacterType.Unknown end
+    if weenie.Skills[SkillId.VoidMagic].Training == SkillTrainingType.Specialized then return CharacterType.VoidMage end
+    if weenie.Skills[SkillId.WarMagic].Training == SkillTrainingType.Specialized then return CharacterType.WarMage end
+    if weenie.Skills[SkillId.WarMagic].Training == SkillTrainingType.Trained then return CharacterType.WarMage end
+    if weenie.Skills[SkillId.MissleWeapons].Training == SkillTrainingType.Specialized then return CharacterType.Archer end
+    if weenie.Skills[SkillId.HeavyWeapons].Training == SkillTrainingType.Specialized 
+        or weenie.Skills[SkillId.LightWeapons].Training == SkillTrainingType.Specialized 
+        or weenie.Skills[SkillId.FinesseWeapons].Training == SkillTrainingType.Specialized
+        or weenie.Skills[SkillId.TwoHandedCombat].Training == SkillTrainingType.Specialized then return CharacterType.Melee end
+    return CharacterType.Unknown
+end
 
 -- Texture Caching
 local function GetOrCreateTexture(iconID)
@@ -517,10 +532,10 @@ local function RefreshCantrips()
             skillName = tostring(id)
         end
         if sk.Training == SkillTrainingType.Specialized then
-            cantripmap["Specialized Skills"][skillName] = {value = "N/A", color = colorwhite, icon = sk.Dat.IconId}
+            cantripmap["Specialized Skills"][skillName] = {value = "N/A", color = Colors.White, icon = sk.Dat.IconId}
         end
         if sk.Training == SkillTrainingType.Trained then
-            cantripmap["Trained Skills"][skillName] = {value = "N/A", color = colorwhite, icon = sk.Dat.IconId}
+            cantripmap["Trained Skills"][skillName] = {value = "N/A", color = Colors.White, icon = sk.Dat.IconId}
         end
     end
     for ward, _ in pairs(cantripmap["Protection Auras"]) do
@@ -662,11 +677,11 @@ hud.OnRender.Add(function()
                                       or (augID == IntId.AugmentationSpecializeItemTinkering and char.Skills[SkillId.ItemTinkering].Training == SkillTrainingType.Untrained)
 
                             if not skip then
-                                local color = coloryellow
+                                local color = Colors.Yellow
                                 if value >= cap then
-                                    color = colorgreen
+                                    color = Colors.Green
                                 elseif value == 0 then
-                                    color = colorred
+                                    color = Colors.Red
                                 end
 
                                 if currentColumnIndex == 0 then
@@ -717,7 +732,7 @@ hud.OnRender.Add(function()
                         local value = char.Value(auraInfo[2]) or 0
                         local prefix = auraInfo[1]
                         local cap = auraInfo[3]
-                        local color = coloryellow
+                        local color = Colors.Yellow
                         local skip = false
     
                         if value >= cap and category == "Nalicana Auras" then
@@ -733,9 +748,9 @@ hud.OnRender.Add(function()
 
                         if not skip then
                             if value >= cap then
-                                color = colorgreen
+                                color = Colors.Green
                             elseif value == 0 then
-                                color = colorred
+                                color = Colors.Red
                             end
         
                             imgui.TableNextRow()
@@ -761,10 +776,10 @@ hud.OnRender.Add(function()
                     local spellName = recallInfo[1]
                     local spellID = recallInfo[2]
                     local spellKnown = game.Character.SpellBook.IsKnown(spellID)
-                    local color = colorred
+                    local color = Colors.Red
                     local status = "Unknown"
                     if spellKnown then
-                        color = colorgreen
+                        color = Colors.Green
                         status = "Known"
                     end
                     imgui.TableNextRow()
@@ -826,14 +841,14 @@ hud.OnRender.Add(function()
                 else 
                     stringFactionScore = tostring(factionscore).."/"..tostring(nextfactionrankscore)
                 end
-                imgui.TextColored(colorgreen,stringFactionScore)
+                imgui.TextColored(Colors.Green,stringFactionScore)
                 local quest = Quest.Dictionary["societyribbonsperdaycounter"]
                 if quest then
                     imgui.TableNextRow()
                     imgui.TableSetColumnIndex(0)
                     imgui.Text("Ribbons per Day (Counter)")
                     imgui.TableSetColumnIndex(1)
-                    imgui.TextColored(colorgreen,tostring(quest.solves).."/"..tostring(maxribbonsperday))
+                    imgui.TextColored(Colors.Green,tostring(quest.solves).."/"..tostring(maxribbonsperday))
                 end
                 local quest = Quest.Dictionary["societyribbonsperdaytimer"]
                 if quest then
@@ -841,10 +856,10 @@ hud.OnRender.Add(function()
                     imgui.TableSetColumnIndex(0)
                     imgui.Text("Ribbons per Day (Timer)")
                     imgui.TableSetColumnIndex(1)
-                    local questColor = colorred
+                    local questColor = Colors.Red
                     local questStatus = Quest:GetTimeUntilExpire(quest)
                     if questStatus == "Ready" then 
-                        questColor = colorgreen
+                        questColor = Colors.Green
                     end
                     imgui.TextColored(questColor,questStatus)
                 end
@@ -854,10 +869,10 @@ hud.OnRender.Add(function()
                     imgui.TableSetColumnIndex(0)
                     imgui.Text("Society Armor Writ")
                     imgui.TableSetColumnIndex(1)
-                    local questColor = colorred
+                    local questColor = Colors.Red
                     local questStatus = Quest:GetTimeUntilExpire(quest)
                     if questStatus == "Ready" then 
-                        questColor = colorgreen
+                        questColor = Colors.Green
                     end
                     imgui.TextColored(questColor,questStatus)
                 end
@@ -867,10 +882,10 @@ hud.OnRender.Add(function()
                     imgui.TableSetColumnIndex(0)
                     imgui.Text("Society Master Stipend")
                     imgui.TableSetColumnIndex(1)
-                    local questColor = colorred
+                    local questColor = Colors.Red
                     local questStatus = Quest:GetTimeUntilExpire(quest)
                     if questStatus == "Ready" then 
-                        questColor = colorgreen
+                        questColor = Colors.Green
                     end
                     imgui.TextColored(questColor,questStatus)
                 end
@@ -890,7 +905,7 @@ hud.OnRender.Add(function()
                                 local socquestStart = string.lower(socquest[2])
                                 local socquestEnd = string.lower(socquest[3])
                                 local questType = socquest[4]
-                                local questColor = coloryellow
+                                local questColor = Colors.Yellow
                                 local questString = "Ready"
                                 imgui.TableNextRow()
                                 local questStart = Quest.Dictionary[socquestStart]
@@ -899,7 +914,7 @@ hud.OnRender.Add(function()
                                     local tag = string.lower(socquest[5])
                                     local completeQuest = Quest.Dictionary[tag]
                                     if completeQuest then
-                                        questColor = colorgreen
+                                        questColor = Colors.Green
                                         questString = "Complete"
                                     else
                                         local startItem = socquest[6]
@@ -916,7 +931,7 @@ hud.OnRender.Add(function()
                                         end
                                     end
                                     if completeCount >= #tags then
-                                        questColor = colorgreen
+                                        questColor = Colors.Green
                                         questString = "Complete ("..completeCount.."/"..#tags..")"
                                     else
                                         questString = "Started ("..completeCount.."/"..#tags..")"
@@ -927,14 +942,14 @@ hud.OnRender.Add(function()
                                     local collectedCount = game.Character.GetInventoryCount(questItem)
                                     questString = "Started ("..collectedCount..")"
                                     if collectedCount >= questItemCount then
-                                        questColor = colorgreen
+                                        questColor = Colors.Green
                                         questString = "Complete ("..collectedCount..")"
                                     end
                                 elseif questStart then
                                     if questType == questTypeKillTask then
                                         questString = "Started ("..questStart.solves..")"
                                         if questStart.solves == questStart.maxsolves then
-                                            questColor = colorgreen
+                                            questColor = Colors.Green
                                             questString = "Complete ("..questStart.solves..")"
                                         end
                                     elseif questType == questTypeOther then
@@ -945,16 +960,16 @@ hud.OnRender.Add(function()
                                         local collectedCount = game.Character.GetInventoryCount(questItem)
                                         questString = "Started ("..collectedCount..")"
                                         if collectedCount >= questItemCount then
-                                            questColor = colorgreen
+                                            questColor = Colors.Green
                                             questString = "Complete ("..collectedCount..")"
                                         end
                                     end
                                 elseif questEnd then
                                     questString = Quest:GetTimeUntilExpire(questEnd)
                                     if questString == "Ready" then
-                                        questColor = coloryellow
+                                        questColor = Colors.Yellow
                                     else
-                                        questColor = colorred
+                                        questColor = Colors.Red
                                     end
                                 end
                                 imgui.TableSetColumnIndex(0)
@@ -1000,13 +1015,13 @@ hud.OnRender.Add(function()
                             local colorQuest
                             if Quest:HasQuestFlag(fhquestCompleted) then
                                 stringFHCompleted = "X"
-                                colorQuest = colorgreen
+                                colorQuest = Colors.Green
                             elseif Quest:HasQuestFlag(fhquestStarted) then
                                 stringFHCompleted = "F"
-                                colorQuest = coloryellow
+                                colorQuest = Colors.Yellow
                             else 
                                 stringFHCompleted = "U"
-                                colorQuest = colorred
+                                colorQuest = Colors.Red
                             end
                             imgui.TableSetColumnIndex(columnIndex)
                             imgui.TextColored(colorQuest,"["..stringFHCompleted.."] "..fhquestName)
@@ -1070,11 +1085,11 @@ hud.OnRender.Add(function()
                                     end 
                                     cap = 1
                                 end
-                                local color = coloryellow
+                                local color = Colors.Yellow
                                 if value >= cap then
-                                    color = colorgreen
+                                    color = Colors.Green
                                 elseif value == 0 then
-                                    color = colorred
+                                    color = Colors.Red
                                 end
                                 local completionString = "Yes"
                                 if category == "Additional Skill Credits" then
@@ -1087,7 +1102,7 @@ hud.OnRender.Add(function()
                                     else
                                         completionString = Quest:GetTimeUntilExpire(quest)
                                         if completionString == "Ready" then
-                                            color = coloryellow
+                                            color = Colors.Yellow
                                         end
                                     end
                                 elseif value < cap then
@@ -1205,7 +1220,7 @@ hud.OnRender.Add(function()
                                         if weapon then
                                             imgui.TableNextRow()
                                             imgui.TableSetColumnIndex(0)
-                                            imgui.TextColored(colorgreen,type)
+                                            imgui.TextColored(Colors.Green,type)
                                             imgui.TableSetColumnIndex(1)
                                             local pos = imgui.GetCursorScreenPos()
                                             local icon = GetOrCreateTexture(weapon.DataValues[DataId.Icon])
@@ -1224,7 +1239,7 @@ hud.OnRender.Add(function()
                                                 game.Actions.ObjectSelect(weapon.Id)
                                             end
                                             imgui.SameLine()
-                                            imgui.TextColored(colorgreen,weapon.Name)
+                                            imgui.TextColored(Colors.Green,weapon.Name)
                                             if imgui.IsItemClicked() then
                                                 game.Actions.ObjectSelect(weapon.Id)
                                             end
@@ -1233,9 +1248,9 @@ hud.OnRender.Add(function()
                                 elseif not settings.hideUnacquiredWeapons then
                                     imgui.TableNextRow()
                                     imgui.TableSetColumnIndex(0)
-                                    imgui.TextColored(colorwhite,type)
+                                    imgui.TextColored(Colors.White,type)
                                     imgui.TableSetColumnIndex(1)
-                                    imgui.TextColored(colorlightgray,"No Weapon Found")
+                                    imgui.TextColored(Colors.LightGray,"No Weapon Found")
                                 end
                             end
                         end
@@ -1294,11 +1309,11 @@ hud.OnRender.Add(function()
 
                 -- Populate table
                 for _, quest in ipairs(Quest.List) do
-                    local color = colorred
+                    local color = Colors.Red
                     if Quest:IsQuestMaxSolved(quest.id) then
-                        color = coloryellow
+                        color = Colors.Yellow
                     elseif Quest:IsQuestAvailable(quest.id) then
-                        color = colorgreen
+                        color = Colors.Green
                     end
                     imgui.TableNextRow()
                     imgui.TableSetColumnIndex(0)
