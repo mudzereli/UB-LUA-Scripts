@@ -2,7 +2,7 @@ local im = require("imgui")
 local ubviews = require("utilitybelt.views")
 local Quest = require("quests")
 local imgui = im.ImGui
-local version = "1.7.5"
+local version = "1.7.6"
 local currentHUDPosition = nil
 local defaultHUDposition = Vector2.new(500,100)
 local iconVectorSize = Vector2.new(16,16)
@@ -57,6 +57,12 @@ local CharacterType = {
     Archer = 2,
     WarMage = 3,
     VoidMage = 4
+}
+-- Quest Info Type (Used In Character Flags)
+local QuestInfoType = {
+    SolveCount = 1,
+    ReadyCheck = 2,
+    StampCheck = 3
 }
 -- Maps Numeric Value to CreatureType
 local creatureTypeMap = {
@@ -267,6 +273,8 @@ local luminanceauras = {
 }
 -- Tree Layout for Recall Spells
 local recallspells = {
+    -- 1 = Spell Name
+    -- 2 = Spell ID
     {"Recall the Sanctuary",2023},
     {"Aerlinthe Recall",2041},
     {"Mount Lethe Recall",2813},
@@ -286,32 +294,33 @@ local recallspells = {
     {"Viridian Rise Great Tree Recall",6322}
 }
 -- Tree Layout for Character Flags
-local typeQuest = 0
-local typeAetheria = 2
 local characterflags = {
+    -- 1 = Flag Name
+    -- 2 = Quest Flag
+    -- 3 = Quest Info Type
     ["Additional Skill Credits"] = {
-        {typeQuest,"+1 Skill Lum Aura","lumaugskillquest",2,2},
-        {typeQuest,"+1 Skill Aun Ralirea","arantahkill1",1,2},
-        {typeQuest,"+1 Skill Chasing Oswald","oswaldmanualcompleted",1,2},
+        {"+1 Skill Lum Aura","lumaugskillquest",QuestInfoType.SolveCount},
+        {"+1 Skill Aun Ralirea","arantahkill1",QuestInfoType.SolveCount},
+        {"+1 Skill Chasing Oswald","oswaldmanualcompleted",QuestInfoType.SolveCount},
     },
     ["Aetheria"] = {
-        {typeAetheria,"Blue Aetheria (75)",IntId.AetheriaBitfield,1},
-        {typeAetheria,"Yellow Aetheria (150)",IntId.AetheriaBitfield,2},
-        {typeAetheria,"Red Aetheria (225)",IntId.AetheriaBitfield,4},
+        {"Blue Aetheria (75)","efulcentermanafieldused",QuestInfoType.StampCheck},
+        {"Yellow Aetheria (150)","efmlcentermanafieldused",QuestInfoType.StampCheck},
+        {"Red Aetheria (225)","efllcentermanafieldused",QuestInfoType.StampCheck},
     },
     ["Augmentation Gems"] = {
-        {typeQuest,"Sir Bellas","augmentationblankgemacquired",1,3},
-        {typeQuest,"Gladiator Diemos Token","pickedupmarkerboss10x",1,3},
-        {typeQuest,"100K Luminance Gem","blankaugluminancetimer_0511",1,3},
+        {"Sir Bellas","augmentationblankgemacquired",QuestInfoType.ReadyCheck},
+        {"Gladiator Diemos Token","pickedupmarkerboss10x",QuestInfoType.ReadyCheck},
+        {"100K Luminance Gem","blankaugluminancetimer_0511",QuestInfoType.ReadyCheck},
     },
     ["Other Flags"] = {
-        {typeQuest,"Candeth Keep Treehouse","strongholdbuildercomplete",1,2},
-        {typeQuest,"Bur Flag (Portal)","burflagged(permanent)",1,2},
-        {typeQuest,"Singularity Caul","virindiisland",1,2},
-        {typeQuest,"Vissidal Island","vissflagcomplete",1,2},
-        {typeQuest,"Dark Isle","darkisleflagged",1,2},
-        {typeQuest,"Luminance Flag","oracleluminancerewardsaccess_1110",1,2},
-        {typeQuest,"Diemos Access","golemstonediemosgiven",1,2}
+        {"Candeth Keep Treehouse","strongholdbuildercomplete",QuestInfoType.StampCheck},
+        {"Bur Flag (Portal)","burflagged(permanent)",QuestInfoType.StampCheck},
+        {"Singularity Caul","virindiisland",QuestInfoType.StampCheck},
+        {"Vissidal Island","vissflagcomplete",QuestInfoType.StampCheck},
+        {"Dark Isle","darkisleflagged",QuestInfoType.StampCheck},
+        {"Luminance Flag","oracleluminancerewardsaccess_1110",QuestInfoType.StampCheck},
+        {"Diemos Access","golemstonediemosgiven",QuestInfoType.StampCheck}
     }
 }
 -- Tree Layout for Society Quests
@@ -784,6 +793,8 @@ hud.OnRender.Add(function()
                     end
                     imgui.TableNextRow()
                     imgui.TableNextColumn()
+                    imgui.Image(GetOrCreateTexture(game.Character.SpellBook.Get(spellID).Icon).TexturePtr,iconVectorSize)
+                    imgui.SameLine()
                     imgui.TextColored(color,spellName)
                     imgui.TableNextColumn()
                     imgui.TextColored(color,status)
@@ -1051,69 +1062,46 @@ hud.OnRender.Add(function()
                     if imgui.BeginTable("Character Flags_"..category, 2) then
                         imgui.TableSetupColumn("Flag 1",im.ImGuiTableColumnFlags.WidthStretch,128)
                         imgui.TableSetupColumn("Flag 1 Points",im.ImGuiTableColumnFlags.WidthStretch,32)
-                            for _, flag in ipairs(flagInfo) do
-                                imgui.TableNextRow()
-                                imgui.TableSetColumnIndex(0)
-                                imgui.TableSetColumnIndex(1)
-                                local type = flag[1]
-                                local prefix
-                                local cap
-                                local value = 0
-                                if type == typeQuest then
-                                    prefix = flag[2]
-                                    cap = flag[4]
-                                    local queststamp = flag[3]
-                                    local questfield = flag[5]
-                                    local quest = Quest.Dictionary[queststamp]
-                                    if quest ~= nil then
-                                        if questfield == 3 then
-                                            if not Quest:IsQuestAvailable(queststamp) then
-                                                value = 1
-                                            end
-                                        else
-                                            value = (tonumber(quest.solves) or 0)
-                                        end
+                        for _, flag in ipairs(flagInfo) do
+                            local prefix = flag[1]
+                            local queststamp = flag[2]
+                            local questinfotype = flag[3]
+                            local quest = Quest.Dictionary[queststamp]
+                            local color = Colors.Red
+                            local completionString = "Unknown"
+                            if questinfotype == QuestInfoType.SolveCount then
+                                if quest ~= nil then
+                                    if quest.solves >= quest.maxsolves then
+                                        color = Colors.Green
+                                    elseif quest.solves == 0 then
+                                        color = Colors.Red
                                     end
-                                elseif type == typeAetheria then
-                                    prefix = flag[2]
-                                    local bitreq = flag[4]
-                                    local bitfield = flag[3]
-                                    ---@diagnostic disable-next-line
-                                    local bitvalue = char.Value(bitfield)
-                                    if bitvalue >= bitreq then
-                                        value = 1
-                                    end 
-                                    cap = 1
-                                end
-                                local color = Colors.Yellow
-                                if value >= cap then
-                                    color = Colors.Green
-                                elseif value == 0 then
+                                    completionString = tostring(quest.solves) .. "/" .. tostring(quest.maxsolves)
+                                else
                                     color = Colors.Red
+                                    completionString = "None"
                                 end
-                                local completionString = "Yes"
-                                if category == "Additional Skill Credits" then
-                                    completionString = tostring(value) .. "/" .. tostring(cap)
-                                elseif category == "Augmentation Gems" then
-                                    local queststamp = flag[3]
-                                    local quest = Quest.Dictionary[queststamp]
-                                    if quest == nil then 
-                                        completionString = "Augs"
-                                    else
-                                        completionString = Quest:GetTimeUntilExpire(quest)
-                                        if completionString == "Ready" then
-                                            color = Colors.Yellow
-                                        end
-                                    end
-                                elseif value < cap then
+                            elseif questinfotype == QuestInfoType.StampCheck then
+                                if Quest:HasQuestFlag(queststamp) then
+                                    color = Colors.Green
+                                    completionString = "Yes"
+                                else
+                                    color = Colors.Red
                                     completionString = "No"
                                 end
-                                imgui.TableNextRow()
-                                imgui.TableSetColumnIndex(0)
-                                imgui.TextColored(color, prefix)
-                                imgui.TableSetColumnIndex(1)
-                                imgui.TextColored(color, completionString)
+                            elseif questinfotype == QuestInfoType.ReadyCheck then
+                                if Quest:IsQuestAvailable(queststamp) then
+                                    color = Colors.Yellow
+                                    completionString = "Ready"
+                                else completionString = Quest:GetTimeUntilExpire(quest)
+                                end
                             end
+                            imgui.TableNextRow()
+                            imgui.TableSetColumnIndex(0)
+                            imgui.TextColored(color, prefix)
+                            imgui.TableSetColumnIndex(1)
+                            imgui.TextColored(color, completionString)
+                        end
                         imgui.EndTable()
                     end
                     imgui.TreePop()
