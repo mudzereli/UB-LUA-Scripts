@@ -1,6 +1,6 @@
 local im = require("imgui")
 local ubviews = require("utilitybelt.views")
-local Quest = require("quests")
+local Quests = require("quests")
 local imgui = im.ImGui
 local version = "1.7.6"
 local currentHUDPosition = nil
@@ -186,8 +186,9 @@ local treeOpenStates = {
 local augmentations = {
     -- 1 = Augmentation Name
     -- 2 = Augmentation Int ID
-    -- 3 = NPC Trainer
-    -- 4 = NPC Trainer Location
+    -- 3 = Augmentation Times Repeatable
+    -- 4 = NPC Trainer
+    -- 5 = NPC Trainer Location
     ["Death Augs"] = {
         {"Keep Items",IntId.AugmentationLessDeathItemLoss,3,"Rohula bint Ludun","Ayan Baqur"},
         {"Keep Spells",IntId.AugmentationSpellsRemainPastDeath,1,"Erik Festus","Ayan Baqur"}
@@ -751,7 +752,7 @@ hud.OnRender.Add(function()
         end
 
         -- Luminance Auras Tab
-        if Quest:HasQuestFlag("oracleluminancerewardsaccess_1110") and imgui.BeginTabItem("Lum") then
+        if Quests:HasQuestFlag("oracleluminancerewardsaccess_1110") and imgui.BeginTabItem("Lum") then
             for category, auraList in pairs(luminanceauras) do
                 imgui.SeparatorText(category)
                 if imgui.BeginTable("Luminance Auras_"..category, 2) then
@@ -774,7 +775,7 @@ hud.OnRender.Add(function()
                         
                         if category == "Seer Auras" then
                             local flag = string.lower(auraInfo[4])
-                            skip = not Quest:HasQuestFlag(flag)
+                            skip = not Quests:HasQuestFlag(flag)
                         end
 
                         if not skip then
@@ -831,7 +832,7 @@ hud.OnRender.Add(function()
                 and char.IntValues[IntId.Faction1Bits] ~= 0 
                 and imgui.BeginTabItem("Society") then
             if imgui.Button("Refresh Quests") then
-                Quest:Refresh()
+                Quests:Refresh()
             end
             local factionbits = char.IntValues[IntId.Faction1Bits]
             local factionscore = 0
@@ -875,7 +876,8 @@ hud.OnRender.Add(function()
                     stringFactionScore = tostring(factionscore).."/"..tostring(nextfactionrankscore)
                 end
                 imgui.TextColored(Colors.Green,stringFactionScore)
-                local quest = Quest.Dictionary["societyribbonsperdaycounter"]
+                ---@type Quest
+                local quest = Quests.Dictionary["societyribbonsperdaycounter"]
                 if quest then
                     imgui.TableNextRow()
                     imgui.TableSetColumnIndex(0)
@@ -883,40 +885,43 @@ hud.OnRender.Add(function()
                     imgui.TableSetColumnIndex(1)
                     imgui.TextColored(Colors.Green,tostring(quest.solves).."/"..tostring(maxribbonsperday))
                 end
-                local quest = Quest.Dictionary["societyribbonsperdaytimer"]
+                ---@type Quest
+                local quest = Quests.Dictionary["societyribbonsperdaytimer"]
                 if quest then
                     imgui.TableNextRow()
                     imgui.TableSetColumnIndex(0)
                     imgui.Text("Ribbons per Day (Timer)")
                     imgui.TableSetColumnIndex(1)
                     local questColor = Colors.Red
-                    local questStatus = Quest:GetTimeUntilExpire(quest)
+                    local questStatus = Quests:GetTimeUntilExpire(quest)
                     if questStatus == "Ready" then 
                         questColor = Colors.Green
                     end
                     imgui.TextColored(questColor,questStatus)
                 end
-                local quest = Quest.Dictionary["societyarmorwritwait"]
+                ---@type Quest
+                local quest = Quests.Dictionary["societyarmorwritwait"]
                 if quest then
                     imgui.TableNextRow()
                     imgui.TableSetColumnIndex(0)
                     imgui.Text("Society Armor Writ")
                     imgui.TableSetColumnIndex(1)
                     local questColor = Colors.Red
-                    local questStatus = Quest:GetTimeUntilExpire(quest)
+                    local questStatus = Quests:GetTimeUntilExpire(quest)
                     if questStatus == "Ready" then 
                         questColor = Colors.Green
                     end
                     imgui.TextColored(questColor,questStatus)
                 end
-                local quest = Quest.Dictionary["societymasterstipendcollectiontimer"]
+                ---@type Quest
+                local quest = Quests.Dictionary["societymasterstipendcollectiontimer"]
                 if quest then
                     imgui.TableNextRow()
                     imgui.TableSetColumnIndex(0)
                     imgui.Text("Society Master Stipend")
                     imgui.TableSetColumnIndex(1)
                     local questColor = Colors.Red
-                    local questStatus = Quest:GetTimeUntilExpire(quest)
+                    local questStatus = Quests:GetTimeUntilExpire(quest)
                     if questStatus == "Ready" then 
                         questColor = Colors.Green
                     end
@@ -941,11 +946,14 @@ hud.OnRender.Add(function()
                                 local questColor = Colors.Yellow
                                 local questString = "Ready"
                                 imgui.TableNextRow()
-                                local questStart = Quest.Dictionary[socquestStart]
-                                local questEnd = Quest.Dictionary[socquestEnd]
-                                if questType == QuestType.QuestTag and Quest:IsQuestAvailable(socquestEnd) then
+                                ---@type Quest
+                                local questStart = Quests.Dictionary[socquestStart]
+                                ---@type Quest
+                                local questEnd = Quests.Dictionary[socquestEnd]
+                                if questType == QuestType.QuestTag and Quests:IsQuestAvailable(socquestEnd) then
                                     local tag = string.lower(socquest[5])
-                                    local completeQuest = Quest.Dictionary[tag]
+                                    ---@type Quest
+                                    local completeQuest = Quests.Dictionary[tag]
                                     if completeQuest then
                                         questColor = Colors.Green
                                         questString = "Complete"
@@ -955,11 +963,11 @@ hud.OnRender.Add(function()
                                             questString = "Started"
                                         end
                                     end
-                                elseif questType == QuestType.MultiQuestTag and Quest:IsQuestAvailable(socquestEnd) and Quest:HasQuestFlag(socquestStart) then
+                                elseif questType == QuestType.MultiQuestTag and Quests:IsQuestAvailable(socquestEnd) and Quests:HasQuestFlag(socquestStart) then
                                     local tags = socquest[5]
                                     local completeCount = 0
                                     for _, tag in pairs(tags) do
-                                        if Quest:HasQuestFlag(string.lower(tag)) then
+                                        if Quests:HasQuestFlag(string.lower(tag)) then
                                             completeCount = completeCount + 1
                                         end
                                     end
@@ -969,7 +977,7 @@ hud.OnRender.Add(function()
                                     else
                                         questString = "Started ("..completeCount.."/"..#tags..")"
                                     end
-                                elseif questType == QuestType.CollectItem and Quest:IsQuestAvailable(socquestEnd) then
+                                elseif questType == QuestType.CollectItem and Quests:IsQuestAvailable(socquestEnd) then
                                     local questItem = socquest[5]
                                     local questItemCount = socquest[6]
                                     local collectedCount = game.Character.GetInventoryCount(questItem)
@@ -998,7 +1006,7 @@ hud.OnRender.Add(function()
                                         end
                                     end
                                 elseif questEnd then
-                                    questString = Quest:GetTimeUntilExpire(questEnd)
+                                    questString = Quests:GetTimeUntilExpire(questEnd)
                                     if questString == "Ready" then
                                         questColor = Colors.Yellow
                                     else
@@ -1022,7 +1030,7 @@ hud.OnRender.Add(function()
         -- Fachub Tab
         if settings.showFacHub and imgui.BeginTabItem("FacHub") then
             if imgui.Button("Refresh Quests") then
-                Quest:Refresh()
+                Quests:Refresh()
             end
             imgui.TextDisabled("[F] = Flagged / [X] = Completed / [U] = Unknown")
             for minLevel, fhquests in pairs(fachubquests) do
@@ -1046,10 +1054,10 @@ hud.OnRender.Add(function()
                             end
                             local stringFHCompleted
                             local colorQuest
-                            if Quest:HasQuestFlag(fhquestCompleted) then
+                            if Quests:HasQuestFlag(fhquestCompleted) then
                                 stringFHCompleted = "X"
                                 colorQuest = Colors.Green
-                            elseif Quest:HasQuestFlag(fhquestStarted) then
+                            elseif Quests:HasQuestFlag(fhquestStarted) then
                                 stringFHCompleted = "F"
                                 colorQuest = Colors.Yellow
                             else 
@@ -1074,7 +1082,7 @@ hud.OnRender.Add(function()
         -- Character Flags Tab
         if imgui.BeginTabItem("Flags") then
             if imgui.Button("Refresh Quests") then
-                Quest:Refresh()
+                Quests:Refresh()
             end
             for category, flagInfo in pairs(characterflags) do
                 imgui.Separator()
@@ -1083,12 +1091,13 @@ hud.OnRender.Add(function()
                 if treeOpenStates[category] then
                     if imgui.BeginTable("Character Flags_"..category, 2) then
                         imgui.TableSetupColumn("Flag 1",im.ImGuiTableColumnFlags.WidthStretch,128)
-                        imgui.TableSetupColumn("Flag 1 Points",im.ImGuiTableColumnFlags.WidthStretch,32)
+                        imgui.TableSetupColumn("Flag 1 Points",im.ImGuiTableColumnFlags.WidthStretch,64)
                         for _, flag in ipairs(flagInfo) do
                             local prefix = flag[1]
                             local queststamp = flag[2]
                             local questinfotype = flag[3]
-                            local quest = Quest.Dictionary[queststamp]
+                            ---@type Quest
+                            local quest = Quests.Dictionary[queststamp]
                             local color = Colors.Red
                             local completionString = "Unknown"
                             if questinfotype == QuestInfoType.SolveCount then
@@ -1104,7 +1113,7 @@ hud.OnRender.Add(function()
                                     completionString = "None"
                                 end
                             elseif questinfotype == QuestInfoType.StampCheck then
-                                if Quest:HasQuestFlag(queststamp) then
+                                if Quests:HasQuestFlag(queststamp) then
                                     color = Colors.Green
                                     completionString = "Yes"
                                 else
@@ -1112,10 +1121,10 @@ hud.OnRender.Add(function()
                                     completionString = "No"
                                 end
                             elseif questinfotype == QuestInfoType.ReadyCheck then
-                                if Quest:IsQuestAvailable(queststamp) then
+                                if Quests:IsQuestAvailable(queststamp) then
                                     color = Colors.Yellow
                                     completionString = "Ready"
-                                else completionString = Quest:GetTimeUntilExpire(quest)
+                                else completionString = Quests:GetTimeUntilExpire(quest)
                                 end
                             end
                             imgui.TableNextRow()
@@ -1275,7 +1284,7 @@ hud.OnRender.Add(function()
         -- General Quests Tab
         if settings.showQuests and imgui.BeginTabItem("Quests") then
             if imgui.Button("Refresh Quests") then
-                Quest:Refresh()
+                Quests:Refresh()
             end
             -- Quests Table
             if imgui.BeginTable("Quests", 6, im.ImGuiTableFlags.ScrollY + im.ImGuiTableFlags.Sortable) then
@@ -1291,12 +1300,12 @@ hud.OnRender.Add(function()
                 -- Handle sorting
                 local sort_specs = imgui.TableGetSortSpecs()
                 if sort_specs and sort_specs.SpecsDirty then
-                    table.sort(Quest.List,function(a,b) 
+                    table.sort(Quests.List,function(a,b) 
                         local sortcol = sort_specs.Specs.ColumnIndex + 1
                         local sortasc = sort_specs.Specs.SortDirection == im.ImGuiSortDirection.Ascending
                         if a and b then
-                            local valA = Quest:GetFieldByID(a,sortcol)
-                            local valB = Quest:GetFieldByID(b,sortcol)
+                            local valA = Quests:GetFieldByID(a,sortcol)
+                            local valB = Quests:GetFieldByID(b,sortcol)
                             if valA and valB then
                                 if tonumber(valA) and tonumber(valB) then
                                     ---@diagnostic disable-next-line
@@ -1318,29 +1327,29 @@ hud.OnRender.Add(function()
                 end
 
                 -- Populate table
-                for _, quest in ipairs(Quest.List) do
+                for _, quest in ipairs(Quests.List) do
                     local color = Colors.Red
-                    if Quest:IsQuestMaxSolved(quest.id) then
+                    if Quests:IsQuestMaxSolved(quest.id) then
                         color = Colors.Yellow
-                    elseif Quest:IsQuestAvailable(quest.id) then
+                    elseif Quests:IsQuestAvailable(quest.id) then
                         color = Colors.Green
                     end
                     imgui.TableNextRow()
                     imgui.TableSetColumnIndex(0)
                     imgui.TextColored(color, quest.id) -- Quest Name
-                    if imgui.IsItemHovered() and quest.description then
-                        imgui.SetTooltip(quest.description)
+                    if imgui.IsItemHovered() and Quests.Description then
+                        imgui.SetTooltip(Quests.Description)
                     end
                     imgui.TableSetColumnIndex(1)
                     imgui.TextColored(color, quest.solves) -- Solves
                     imgui.TableSetColumnIndex(2)
-                    imgui.TextColored(color, Quest:FormatTimeStamp(quest.timestamp)) -- Timestamp
+                    imgui.TextColored(color, Quests:FormatTimeStamp(quest.timestamp)) -- Timestamp
                     imgui.TableSetColumnIndex(3)
                     imgui.TextColored(color, quest.maxsolves) -- MaxSolves
                     imgui.TableSetColumnIndex(4)
-                    imgui.TextColored(color, quest.delta) -- Delta
+                    imgui.TextColored(color, Quests.Delta) -- Delta
                     imgui.TableSetColumnIndex(5)
-                    imgui.TextColored(color, Quest:GetTimeUntilExpire(quest)) -- Expired
+                    imgui.TextColored(color, Quests:GetTimeUntilExpire(quest)) -- Expired
                 end
         
                 imgui.EndTable()
@@ -1383,6 +1392,6 @@ end)
 
 hud.Visible = true
 
-Quest:Refresh()
+Quests:Refresh()
 RefreshCantrips()
 RefreshWeapons()
