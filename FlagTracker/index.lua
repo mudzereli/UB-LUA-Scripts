@@ -37,6 +37,7 @@ local Colors = {
     LightGray = Vector4.new(0.7, 0.7, 0.7, 1),
     DarkGray = Vector4.new(0.6, 0.6, 0.6, 1)
 }
+
 -- Holds Script-Wide Settings
 local Settings = {
     showLuminance = true,
@@ -50,6 +51,7 @@ local Settings = {
     hideResistanceCleavingWeapons=true,
     hideNonEssentialCreatureSlayers=true
 }
+
 -- Different Character Types (Returned by GetCharacterType)
 local CharacterType = {
     Unknown = 0,
@@ -58,12 +60,14 @@ local CharacterType = {
     WarMage = 3,
     VoidMage = 4
 }
+
 -- Quest Info Type (Used In Character Flags)
 local QuestInfoType = {
     SolveCount = 1,
     ReadyCheck = 2,
     StampCheck = 3
 }
+
 -- Quest Type (Used For Society Quests)
 local QuestType = {
     Other = 0,
@@ -72,6 +76,7 @@ local QuestType = {
     QuestTag = 3,
     MultiQuestTag = 4
 }
+
 -- Maps Numeric Value to CreatureType
 local MapCreatureType = {
     [0] = CreatureType.Invalid,
@@ -177,11 +182,13 @@ local MapCreatureType = {
     [100] = CreatureType.Gurog,
     [101] = CreatureType.Anekshay
 }
+
 -- Skill Replacement for Cantrips That Have Different Names Than Their Skill
 local MapSkillCantripReplacements = {
     [SkillId.MagicDefense] = "MagicResistance",
     [SkillId.MeleeDefense] = "Invulnerability"
 }
+
 -- Color Map for Cantrip Levels
 local MapCantripColors = {
     ["N/A"] = Colors.LightGray,
@@ -191,6 +198,7 @@ local MapCantripColors = {
     ["Epic"] = Colors.BrightPurple,
     ["Legendary"] = Colors.SoftOrange
 }
+
 -- Rank Map for Societies
 local MapSocietyRibbons = {
     -- 1 = Min Ribbons
@@ -202,11 +210,13 @@ local MapSocietyRibbons = {
     ["Lord"] = {min = 601, max = 995, perday = 200},
     ["Master"] = {min = 1001, max = 9999, perday = 250}
 }
+
 -- State Tracking for Tree Nodes
 local TreeOpenStates = {
     ["Stat Augs"] = false,
     ["Resistance Augs"] = false
 }
+
 -- Tree Layout for Augmentation Tab
 local TabAugmentations = {
     -- 1 = Augmentation Name
@@ -276,6 +286,7 @@ local TabAugmentations = {
         {name = "Lightning", id = IntId.AugmentationResistanceLightning, repeatable = 2, trainer = "Enli Yuo", location = "Hebian-To"}
     }
 }
+
 -- Tree Layout for Luminance Auras
 local TabLuminanceAuras = {
     -- 1 = Luminance Aura Name
@@ -305,6 +316,7 @@ local TabLuminanceAuras = {
         {"(Lord Tyragar) +1 Damage Reduction Rating",IntId.LumAugDamageReductionRating,5,"LoyalToLordTyragar"},
     }
 }
+
 -- Tree Layout for Recall Spells
 local TabRecallSpells = {
     -- 1 = Spell Name
@@ -327,6 +339,7 @@ local TabRecallSpells = {
     {"Viridian Rise Recall",6321},
     {"Viridian Rise Great Tree Recall",6322}
 }
+
 -- Tree Layout for Character Flags
 local TabCharacterFlags = {
     -- 1 = Flag Name
@@ -357,6 +370,7 @@ local TabCharacterFlags = {
         {"Diemos Access","golemstonediemosgiven",QuestInfoType.StampCheck}
     }
 }
+
 -- Tree Layout for Society Quests
 local TabSocietyQuests = {
     -- 1 = Quest Name
@@ -413,6 +427,7 @@ local TabSocietyQuests = {
         {"MC: Supply Saboteur","","SuppliesTurnedIn1209",QuestType.Other}
     }
 }
+
 -- Tree Layout for Facility Hub Quests
 local TabFacilityHubQuests = {
     -- 1 = Fac Hub Quest Name
@@ -457,6 +472,7 @@ local TabFacilityHubQuests = {
         {"Blackmire","fachubblackmire"}
     }
 }
+
 -- Tree Layout for Cantrip Tracker
 local TabCantrips = {
     ["Specialized Skills"] = {},
@@ -480,6 +496,8 @@ local TabCantrips = {
         ["Storm Ward"] = { value = "N/A", color = Colors.SoftPurple, spellIcon = SpellId.LightningProtectionSelf8} -- Pastel Purple
     }
 }
+
+-- Tree Layout for Weapons Tab
 local TabWeapons = {
     ["Creature Slayer"] = {
         ["Tumerok"] = {IntId.SlayerCreatureType, CreatureType.Tumerok, true, {}},
