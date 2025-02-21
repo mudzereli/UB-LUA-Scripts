@@ -2,7 +2,7 @@ local im = require("imgui")
 local ubviews = require("utilitybelt.views")
 local Quests = require("quests")
 local imgui = im.ImGui
-local version = "1.7.8"
+local version = "1.7.9"
 local currentHUDPosition = nil
 local defaultHUDposition = Vector2.new(500,100)
 local iconVectorSize = Vector2.new(16,16)
@@ -73,7 +73,7 @@ local QuestType = {
     MultiQuestTag = 4
 }
 -- Maps Numeric Value to CreatureType
-local CreatureTypeMap = {
+local MapCreatureType = {
     [0] = CreatureType.Invalid,
     [1] = CreatureType.Olthoi,
     [2] = CreatureType.Banderling,
@@ -176,6 +176,31 @@ local CreatureTypeMap = {
     [99] = CreatureType.GearKnight,
     [100] = CreatureType.Gurog,
     [101] = CreatureType.Anekshay
+}
+-- Skill Replacement for Cantrips That Have Different Names Than Their Skill
+local MapSkillCantripReplacements = {
+    [SkillId.MagicDefense] = "MagicResistance",
+    [SkillId.MeleeDefense] = "Invulnerability"
+}
+-- Color Map for Cantrip Levels
+local MapCantripColors = {
+    ["N/A"] = Colors.LightGray,
+    ["Minor"] = Colors.White,
+    ["Moderate"] = Colors.SoftGreen,
+    ["Major"] = Colors.LightBlue,
+    ["Epic"] = Colors.BrightPurple,
+    ["Legendary"] = Colors.SoftOrange
+}
+-- Rank Map for Societies
+local MapSocietyRibbons = {
+    -- 1 = Min Ribbons
+    -- 2 = Max Ribbons
+    -- 3 = Ribbons Per Day
+    ["Initiate"] = {min = 1, max = 95, perday = 50},
+    ["Adept"] = {min = 101, max = 295, perday = 100},
+    ["Knight"] = {min = 301, max = 595, perday = 150},
+    ["Lord"] = {min = 601, max = 995, perday = 200},
+    ["Master"] = {min = 1001, max = 9999, perday = 250}
 }
 -- State Tracking for Tree Nodes
 local TreeOpenStates = {
@@ -388,17 +413,6 @@ local TabSocietyQuests = {
         {"MC: Supply Saboteur","","SuppliesTurnedIn1209",QuestType.Other}
     }
 }
--- Rank Map for Societies
-local SocietyRanks = {
-    -- 1 = Min Ribbons
-    -- 2 = Max Ribbons
-    -- 3 = Ribbons Per Day
-    ["Initiate"] = {1,95,50},
-    ["Adept"] = {101,295,100},
-    ["Knight"] = {301,595,150},
-    ["Lord"] = {601,995,200},
-    ["Master"] = {1001,9999,250}
-}
 -- Tree Layout for Facility Hub Quests
 local TabFacilityHubQuests = {
     -- 1 = Fac Hub Quest Name
@@ -465,20 +479,6 @@ local TabCantrips = {
         ["Acid Ward"] = { value = "N/A", color = Colors.SofterGreen, spellIcon = SpellId.AcidProtectionSelf8}, -- Soft Green
         ["Storm Ward"] = { value = "N/A", color = Colors.SoftPurple, spellIcon = SpellId.LightningProtectionSelf8} -- Pastel Purple
     }
-}
--- Color Map for Cantrip Levels
-local CantripColors = {
-    ["N/A"] = Colors.LightGray,
-    ["Minor"] = Colors.White,
-    ["Moderate"] = Colors.SoftGreen,
-    ["Major"] = Colors.LightBlue,
-    ["Epic"] = Colors.BrightPurple,
-    ["Legendary"] = Colors.SoftOrange
-}
--- Skill Replacement for Cantrips That Have Different Names Than Their Skill
-local SkillCantripReplacements = {
-    [SkillId.MagicDefense] = "MagicResistance",
-    [SkillId.MeleeDefense] = "Invulnerability"
 }
 local TabWeapons = {
     ["Creature Slayer"] = {
@@ -559,7 +559,7 @@ end
 local function RefreshCantrips() 
     characterTypeSelf = GetCharacterType()
     for id, sk in pairs(game.Character.Weenie.Skills) do
-        local skillName = SkillCantripReplacements[id]
+        local skillName = MapSkillCantripReplacements[id]
         if skillName == nil then
             skillName = tostring(id)
         end
@@ -581,7 +581,7 @@ local function RefreshCantrips()
         --- @type Spell
         local spell = game.Character.SpellBook.Get(ench.SpellId)
         if spell then
-            for type, _ in pairs(CantripColors) do
+            for type, _ in pairs(MapCantripColors) do
                 for ward, _ in pairs(TabCantrips["Protection Auras"]) do
                     local matchstring = type .. " " .. ward
                     if spell.Name == matchstring then
@@ -619,7 +619,7 @@ local function CategorizeWeapon(wobject)
             local weaponIntIDCheck = values[1]
             local weaponIntIDExpectedResult = values[2]
             if weaponIntIDCheck == IntId.CreatureType then
-                weaponIntIDExpectedResult = CreatureTypeMap[weaponIntIDExpectedResult]
+                weaponIntIDExpectedResult = MapCreatureType[weaponIntIDExpectedResult]
             end
             local weaponIntIDResult = wobject.IntValues[weaponIntIDCheck]
             if weaponIntIDResult == weaponIntIDExpectedResult then
@@ -851,13 +851,13 @@ hud.OnRender.Add(function()
                 factionscore = char.IntValues[IntId.SocietyRankRadblo]
             end
             -- Determine Society Rank
-            for isocietyrank, thresholds in pairs(SocietyRanks) do
-                local lowerT = thresholds[1]
-                local upperT = thresholds[2]
+            for isocietyrank, thresholds in pairs(MapSocietyRibbons) do
+                local lowerT = thresholds.min
+                local upperT = thresholds.max
                 if factionscore >= lowerT and factionscore <= upperT then
                     societyrank = isocietyrank
                     nextfactionrankscore = upperT
-                    maxribbonsperday = thresholds[3]
+                    maxribbonsperday = thresholds.perday
                 end
             end
             imgui.SeparatorText(society.." - "..societyrank)
@@ -929,8 +929,8 @@ hud.OnRender.Add(function()
                 imgui.EndTable()
             end
             for isocietyrank, questList in pairs(TabSocietyQuests) do
-                local thresholds = SocietyRanks[isocietyrank]
-                local lowerT = thresholds[1]
+                local thresholds = MapSocietyRibbons[isocietyrank]
+                local lowerT = thresholds.min
                 if factionscore >= lowerT then
                     imgui.Separator()
                     if imgui.TreeNode(isocietyrank.." Quests") then
@@ -1190,7 +1190,7 @@ hud.OnRender.Add(function()
                                 end
                                 imgui.TextColored(info.color, effect)
                                 imgui.TableSetColumnIndex(1)
-                                imgui.TextColored(CantripColors[info.value], info.value)
+                                imgui.TextColored(MapCantripColors[info.value], info.value)
                             end
                         end
                         imgui.EndTable()
