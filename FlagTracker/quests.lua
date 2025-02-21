@@ -3,6 +3,15 @@ local libQuest = {
     Dictionary = {}
 }
 
+---@class Quest: Object
+---@field id number
+---@field solves number
+---@field timestamp number
+---@field description string
+---@field maxsolves number
+---@field delta number
+---@field expiretime number
+
 local function OnChatText(evt)
     local taskname, solves, timestamp, description, maxsolves, delta = string.match(evt.Message, "([%w%s%(%)-]+) %- (%d+) solves %((%d+)%)\"([^\"]+)\" (%-?%d+) (%d+)")
     if taskname and solves and timestamp and description and maxsolves and delta then
