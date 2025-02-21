@@ -64,6 +64,14 @@ local QuestInfoType = {
     ReadyCheck = 2,
     StampCheck = 3
 }
+-- Quest Type (Used For Society Quests)
+local QuestType = {
+    Other = 0,
+    KillTask = 1,
+    CollectItem = 2,
+    QuestTag = 3,
+    MultiQuestTag = 4
+}
 -- Maps Numeric Value to CreatureType
 local creatureTypeMap = {
     [0] = CreatureType.Invalid,
@@ -324,55 +332,66 @@ local characterflags = {
     }
 }
 -- Tree Layout for Society Quests
-local questTypeOther = 0
-local questTypeKillTask = 1
-local questTypeCollectItem = 2
-local questTypeQuestTag = 3
-local questTypeMultiQuestTag = 4
 local societyquests = {
+    -- 1 = Quest Name
+    -- 2 = Quest Start Tag
+    -- 3 = Quest End Tag
+    -- 4 = Quest Type
+    -- Other Fields (Dependent on QuestType)
+    -- QuestType.CollectItem
+    -- 5 = Item To Collect
+    -- 6 = # Items to Collect
+    -- QuestType.QuestTag
+    -- 5 = "Ready For Turn In" Quest Tag
+    -- 6 = "Quest Started" Item
+    -- QuestType.MultiQuestTag
+    -- 5 = Additional Quest Tags To Complete (x/cap)
     ["Initiate"] = {
-        {"GK: Parts x10","","GearknightPartsCollectionWait_0513",questTypeCollectItem,"Pile of Gearknight Parts",10},
-        {"GK: Phalanx Kill x10","GearknightInvasionPhalanxKilltask_0513","GearknightInvasionPhalanxKillWait_0513",questTypeKillTask},
-        {"GK: Mana Siphon","","GearknightInvasionHighSiphonWait_1009",questTypeQuestTag,"GearknightInvasionHighSiphonStart_1009","Unstable Mana Stone"},
-        {"GY: Skeleton Jaw x8","TaskGrave1JawCollectStarted","TaskGrave1JawCollectWait",questTypeCollectItem,"Pyre Skeleton Jaw",8},
-        {"GY: Wight Sorcerer Kill x12","TaskGrave1WightMageKilltask","TaskGrave1WightMageWait",questTypeKillTask},
-        {"GY: Shambling Archivist Kill","TaskGrave1BossKillStarted","TaskGrave1BossKillWait",questTypeKillTask},
-        {"DI: Vaeshok Kill","TaskDIRuschkBossKillTask","TaskDIRuschkBossKillTaskWait",questTypeKillTask},
-        {"DI: Deliver Remoran Fin","","TaskDIDeliveryWait",questTypeQuestTag,"TaskDIDelivery","Altered Dark Remoran Fin"}
+        {"GK: Parts x10","","GearknightPartsCollectionWait_0513",QuestType.CollectItem,"Pile of Gearknight Parts",10},
+        {"GK: Phalanx Kill x10","GearknightInvasionPhalanxKilltask_0513","GearknightInvasionPhalanxKillWait_0513",QuestType.KillTask},
+        {"GK: Mana Siphon","","GearknightInvasionHighSiphonWait_1009",QuestType.QuestTag,"GearknightInvasionHighSiphonStart_1009","Unstable Mana Stone"},
+        {"GY: Skeleton Jaw x8","TaskGrave1JawCollectStarted","TaskGrave1JawCollectWait",QuestType.CollectItem,"Pyre Skeleton Jaw",8},
+        {"GY: Wight Sorcerer Kill x12","TaskGrave1WightMageKilltask","TaskGrave1WightMageWait",QuestType.KillTask},
+        {"GY: Shambling Archivist Kill","TaskGrave1BossKillStarted","TaskGrave1BossKillWait",QuestType.KillTask},
+        {"DI: Vaeshok Kill","TaskDIRuschkBossKillTask","TaskDIRuschkBossKillTaskWait",QuestType.KillTask},
+        {"DI: Deliver Remoran Fin","","TaskDIDeliveryWait",QuestType.QuestTag,"TaskDIDelivery","Altered Dark Remoran Fin"}
     },
     ["Adept"] = {
-        {"DI: Black Coral x10","TaskDIBlackCoralStarted","TaskDIBlackCoralComplete",questTypeCollectItem,"Black Coral",10},
-        {"DI: Crystal of Perception","TaskDIScoutStarted","TaskDIScoutComplete",questTypeOther},
-        {"DI: Battle Reports x10","TaskDIReportStarted","TaskDIReportWait",questTypeCollectItem,"Falatacot Battle Report",10},
-        {"GY: Supplies to Massilor","","TaskGrave2FedExWait",questTypeQuestTag,"TaskGrave2FedExDelivered","Supplies for Massilor"},
-        {"GY: Stone Tracing","TaskGrave2WallCarvingStarted","TaskGrave2WallCarvingWait",questTypeCollectItem,"Imprinted Archaeologist's Paper",1}
+        {"DI: Black Coral x10","TaskDIBlackCoralStarted","TaskDIBlackCoralComplete",QuestType.CollectItem,"Black Coral",10},
+        {"DI: Crystal of Perception","TaskDIScoutStarted","TaskDIScoutComplete",QuestType.Other},
+        {"DI: Battle Reports x10","TaskDIReportStarted","TaskDIReportWait",QuestType.CollectItem,"Falatacot Battle Report",10},
+        {"GY: Supplies to Massilor","","TaskGrave2FedExWait",QuestType.QuestTag,"TaskGrave2FedExDelivered","Supplies for Massilor"},
+        {"GY: Stone Tracing","TaskGrave2WallCarvingStarted","TaskGrave2WallCarvingWait",QuestType.CollectItem,"Imprinted Archaeologist's Paper",1}
     },
     ["Knight"] = {
-        {"FI: Blessed Moarsman Kill x50","TaskFreebooterMoarsmanKilltask","TaskFreebooterMoarsmanKilltaskWait",questTypeKillTask},
-        {"FI: Bandit Mana Boss Kill","TaskFreebooterBanditBossKill","TaskFreebooterBanditBossKillWait",questTypeKillTask},
-        {"FI: Glowing Jungle Lily x20","TaskFreebooterJungleLilyStarted","TaskFreebooterJungleLilyComplete",questTypeCollectItem,"Glowing Jungle Lily",20},
-        {"FI: Glowing Moar Gland x30","TaskFreebooterMoarGlandStarted","TaskFreebooterMoarGlandComplete",questTypeCollectItem,"Glowing Moar Gland",30},
-        {"FI: Killer Phyntos Wasp Kill x50","KillTaskPhyntosKiller1109","KillTaskPhyntosKillerWait1109",questTypeKillTask},
-        {"FI: Mana-Infused Jungle Flower x20","TaskFreebooterJungleFlowerStarted","TaskFreebooterJungleFlowerComplete",questTypeCollectItem,"Mana-Infused Jungle Flower",20},
-        {"FI: Phyntos Larva Kill x20","KillTaskPhyntosLarvae1109","KillTaskPhyntosLarvaeWait1109",questTypeKillTask},
-        {"FI: Phyntos Honey x10","","PhyntosHoneyComplete1109",questTypeCollectItem,"Phyntos Honey",10},
-        {"FI: Hive Queen Kill","","KillPhyntosQueenPickup1109",questTypeCollectItem,"Phyntos Queen's Abdomen",1},
-        {"FI: Phyntos Hive Splinters x10","","PhyntosHiveComplete1109",questTypeCollectItem,"Hive Splinter",10}
+        {"FI: Blessed Moarsman Kill x50","TaskFreebooterMoarsmanKilltask","TaskFreebooterMoarsmanKilltaskWait",QuestType.KillTask},
+        {"FI: Bandit Mana Boss Kill","TaskFreebooterBanditBossKill","TaskFreebooterBanditBossKillWait",QuestType.KillTask},
+        {"FI: Glowing Jungle Lily x20","TaskFreebooterJungleLilyStarted","TaskFreebooterJungleLilyComplete",QuestType.CollectItem,"Glowing Jungle Lily",20},
+        {"FI: Glowing Moar Gland x30","TaskFreebooterMoarGlandStarted","TaskFreebooterMoarGlandComplete",QuestType.CollectItem,"Glowing Moar Gland",30},
+        {"FI: Killer Phyntos Wasp Kill x50","KillTaskPhyntosKiller1109","KillTaskPhyntosKillerWait1109",QuestType.KillTask},
+        {"FI: Mana-Infused Jungle Flower x20","TaskFreebooterJungleFlowerStarted","TaskFreebooterJungleFlowerComplete",QuestType.CollectItem,"Mana-Infused Jungle Flower",20},
+        {"FI: Phyntos Larva Kill x20","KillTaskPhyntosLarvae1109","KillTaskPhyntosLarvaeWait1109",QuestType.KillTask},
+        {"FI: Phyntos Honey x10","","PhyntosHoneyComplete1109",QuestType.CollectItem,"Phyntos Honey",10},
+        {"FI: Hive Queen Kill","","KillPhyntosQueenPickup1109",QuestType.CollectItem,"Phyntos Queen's Abdomen",1},
+        {"FI: Phyntos Hive Splinters x10","","PhyntosHiveComplete1109",QuestType.CollectItem,"Hive Splinter",10}
     },
     ["Lord"] = {
-        {"MC: Artifact Collection","TaskMoarsmenArtifactsStarted","TaskMoarsmenArtifactsWait",questTypeOther},
-        {"MC: Coral Tower Destroyer","TaskCoralTowersStarted","TaskCoralTowersWait",questTypeMultiQuestTag,{"CoralTowerBlackDead","CoralTowerBlueDead","CoralTowerGreenDead","CoralTowerRedDead","CoralTowerWhiteDead"}},
-        {"MC: High Priest of T'thuun Kill","KillTaskMoarsmanHighPriestStarted","KillTaskMoarsmanHighPriestWait",questTypeMultiQuestTag,{"HighPriestAcolyteDead","HighPriestFirstDead","HighPriestSecondDead","HighPriestThirdDead"}},
-        {"MC: Magshuth Moarsman Kill x20","KilltaskMagshuthMoarsman","KilltaskMagshuthMoarsmanWait",questTypeKillTask},
-        {"MC: Shoguth Moarsman Kill x40","KilltaskShoguthMoarsman","KilltaskShoguthMoarsmanWait",questTypeKillTask},
-        {"MC: Moguth Moarsman Kill x60","KilltaskMoguthMoarsman","KilltaskMoguthMoarsmanWait",questTypeKillTask},
-        {"MC: Moarsman Spawning Pools","TaskSpawnPoolsStarted","TaskSpawnPoolsWait",questTypeMultiQuestTag,{"BroodMotherZeroDead","BroodMotherOneDead","BroodMotherTwoDead","BroodMotherThreeDead"}},
-        {"MC: Palm Fort Defended","","PalmFortDefended1209",questTypeOther},
-        {"MC: Supply Saboteur","","SuppliesTurnedIn1209",questTypeOther}
+        {"MC: Artifact Collection","TaskMoarsmenArtifactsStarted","TaskMoarsmenArtifactsWait",QuestType.Other},
+        {"MC: Coral Tower Destroyer","TaskCoralTowersStarted","TaskCoralTowersWait",QuestType.MultiQuestTag,{"CoralTowerBlackDead","CoralTowerBlueDead","CoralTowerGreenDead","CoralTowerRedDead","CoralTowerWhiteDead"}},
+        {"MC: High Priest of T'thuun Kill","KillTaskMoarsmanHighPriestStarted","KillTaskMoarsmanHighPriestWait",QuestType.MultiQuestTag,{"HighPriestAcolyteDead","HighPriestFirstDead","HighPriestSecondDead","HighPriestThirdDead"}},
+        {"MC: Magshuth Moarsman Kill x20","KilltaskMagshuthMoarsman","KilltaskMagshuthMoarsmanWait",QuestType.KillTask},
+        {"MC: Shoguth Moarsman Kill x40","KilltaskShoguthMoarsman","KilltaskShoguthMoarsmanWait",QuestType.KillTask},
+        {"MC: Moguth Moarsman Kill x60","KilltaskMoguthMoarsman","KilltaskMoguthMoarsmanWait",QuestType.KillTask},
+        {"MC: Moarsman Spawning Pools","TaskSpawnPoolsStarted","TaskSpawnPoolsWait",QuestType.MultiQuestTag,{"BroodMotherZeroDead","BroodMotherOneDead","BroodMotherTwoDead","BroodMotherThreeDead"}},
+        {"MC: Palm Fort Defended","","PalmFortDefended1209",QuestType.Other},
+        {"MC: Supply Saboteur","","SuppliesTurnedIn1209",QuestType.Other}
     }
 }
--- Rank Map for Societies {Min Ribbons,Max Ribbons,Ribbons Per Day}
+-- Rank Map for Societies
 local societyranks = {
+    -- 1 = Min Ribbons
+    -- 2 = Max Ribbons
+    -- 3 = Ribbons Per Day
     ["Initiate"] = {1,95,50},
     ["Adept"] = {101,295,100},
     ["Knight"] = {301,595,150},
@@ -381,6 +400,9 @@ local societyranks = {
 }
 -- Tree Layout for Facility Hub Quests
 local fachubquests = {
+    -- 1 = Fac Hub Quest Name
+    -- 2 = Completion Quest Tag
+    -- 3 = Starting Quest Tag (if different than normal syntax)
     ["Level 10"] = {
         {"Glenden Wood","fachubglendenwood"},
         {"Folthid Estate","fachubfolthid"},
@@ -921,7 +943,7 @@ hud.OnRender.Add(function()
                                 imgui.TableNextRow()
                                 local questStart = Quest.Dictionary[socquestStart]
                                 local questEnd = Quest.Dictionary[socquestEnd]
-                                if questType == questTypeQuestTag and Quest:IsQuestAvailable(socquestEnd) then
+                                if questType == QuestType.QuestTag and Quest:IsQuestAvailable(socquestEnd) then
                                     local tag = string.lower(socquest[5])
                                     local completeQuest = Quest.Dictionary[tag]
                                     if completeQuest then
@@ -933,7 +955,7 @@ hud.OnRender.Add(function()
                                             questString = "Started"
                                         end
                                     end
-                                elseif questType == questTypeMultiQuestTag and Quest:IsQuestAvailable(socquestEnd) and Quest:HasQuestFlag(socquestStart) then
+                                elseif questType == QuestType.MultiQuestTag and Quest:IsQuestAvailable(socquestEnd) and Quest:HasQuestFlag(socquestStart) then
                                     local tags = socquest[5]
                                     local completeCount = 0
                                     for _, tag in pairs(tags) do
@@ -947,7 +969,7 @@ hud.OnRender.Add(function()
                                     else
                                         questString = "Started ("..completeCount.."/"..#tags..")"
                                     end
-                                elseif questType == questTypeCollectItem and Quest:IsQuestAvailable(socquestEnd) then
+                                elseif questType == QuestType.CollectItem and Quest:IsQuestAvailable(socquestEnd) then
                                     local questItem = socquest[5]
                                     local questItemCount = socquest[6]
                                     local collectedCount = game.Character.GetInventoryCount(questItem)
@@ -957,15 +979,15 @@ hud.OnRender.Add(function()
                                         questString = "Complete ("..collectedCount..")"
                                     end
                                 elseif questStart then
-                                    if questType == questTypeKillTask then
+                                    if questType == QuestType.KillTask then
                                         questString = "Started ("..questStart.solves..")"
                                         if questStart.solves == questStart.maxsolves then
                                             questColor = Colors.Green
                                             questString = "Complete ("..questStart.solves..")"
                                         end
-                                    elseif questType == questTypeOther then
+                                    elseif questType == QuestType.Other then
                                         questString = "Started"
-                                    elseif questType == questTypeCollectItem then
+                                    elseif questType == QuestType.CollectItem then
                                         local questItem = socquest[5]
                                         local questItemCount = socquest[6]
                                         local collectedCount = game.Character.GetInventoryCount(questItem)
