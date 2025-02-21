@@ -2,7 +2,7 @@ local im = require("imgui")
 local ubviews = require("utilitybelt.views")
 local Quests = require("quests")
 local imgui = im.ImGui
-local version = "1.7.7"
+local version = "1.7.8"
 local currentHUDPosition = nil
 local defaultHUDposition = Vector2.new(500,100)
 local iconVectorSize = Vector2.new(16,16)
@@ -38,7 +38,7 @@ local Colors = {
     DarkGray = Vector4.new(0.6, 0.6, 0.6, 1)
 }
 -- Holds Script-Wide Settings
-local settings = {
+local Settings = {
     showLuminance = true,
     showRecallSpells = true,
     showSociety=true,
@@ -73,7 +73,7 @@ local QuestType = {
     MultiQuestTag = 4
 }
 -- Maps Numeric Value to CreatureType
-local creatureTypeMap = {
+local CreatureTypeMap = {
     [0] = CreatureType.Invalid,
     [1] = CreatureType.Olthoi,
     [2] = CreatureType.Banderling,
@@ -178,12 +178,12 @@ local creatureTypeMap = {
     [101] = CreatureType.Anekshay
 }
 -- State Tracking for Tree Nodes
-local treeOpenStates = {
+local TreeOpenStates = {
     ["Stat Augs"] = false,
     ["Resistance Augs"] = false
 }
 -- Tree Layout for Augmentation Tab
-local augmentations = {
+local TabAugmentations = {
     -- 1 = Augmentation Name
     -- 2 = Augmentation Int ID
     -- 3 = Augmentation Times Repeatable
@@ -252,7 +252,7 @@ local augmentations = {
     }
 }
 -- Tree Layout for Luminance Auras
-local luminanceauras = {
+local TabLuminanceAuras = {
     -- 1 = Luminance Aura Name
     -- 2 = Luminance Aura IntID
     -- 3 = Luminance Aura Cap
@@ -281,7 +281,7 @@ local luminanceauras = {
     }
 }
 -- Tree Layout for Recall Spells
-local recallspells = {
+local TabRecallSpells = {
     -- 1 = Spell Name
     -- 2 = Spell ID
     {"Recall the Sanctuary",2023},
@@ -303,7 +303,7 @@ local recallspells = {
     {"Viridian Rise Great Tree Recall",6322}
 }
 -- Tree Layout for Character Flags
-local characterflags = {
+local TabCharacterFlags = {
     -- 1 = Flag Name
     -- 2 = Quest Flag
     -- 3 = Quest Info Type
@@ -333,7 +333,7 @@ local characterflags = {
     }
 }
 -- Tree Layout for Society Quests
-local societyquests = {
+local TabSocietyQuests = {
     -- 1 = Quest Name
     -- 2 = Quest Start Tag
     -- 3 = Quest End Tag
@@ -389,7 +389,7 @@ local societyquests = {
     }
 }
 -- Rank Map for Societies
-local societyranks = {
+local SocietyRanks = {
     -- 1 = Min Ribbons
     -- 2 = Max Ribbons
     -- 3 = Ribbons Per Day
@@ -400,7 +400,7 @@ local societyranks = {
     ["Master"] = {1001,9999,250}
 }
 -- Tree Layout for Facility Hub Quests
-local fachubquests = {
+local TabFacilityHubQuests = {
     -- 1 = Fac Hub Quest Name
     -- 2 = Completion Quest Tag
     -- 3 = Starting Quest Tag (if different than normal syntax)
@@ -444,7 +444,7 @@ local fachubquests = {
     }
 }
 -- Tree Layout for Cantrip Tracker
-local cantripmap = {
+local TabCantrips = {
     ["Specialized Skills"] = {},
     ["Trained Skills"] = {},
     ["Attributes"] = {
@@ -467,7 +467,7 @@ local cantripmap = {
     }
 }
 -- Color Map for Cantrip Levels
-local cantriptypes = {
+local CantripColors = {
     ["N/A"] = Colors.LightGray,
     ["Minor"] = Colors.White,
     ["Moderate"] = Colors.SoftGreen,
@@ -476,11 +476,11 @@ local cantriptypes = {
     ["Legendary"] = Colors.SoftOrange
 }
 -- Skill Replacement for Cantrips That Have Different Names Than Their Skill
-local skillcantripreplacements = {
+local SkillCantripReplacements = {
     [SkillId.MagicDefense] = "MagicResistance",
     [SkillId.MeleeDefense] = "Invulnerability"
 }
-local trackedWeaponTypes = {
+local TabWeapons = {
     ["Creature Slayer"] = {
         ["Tumerok"] = {IntId.SlayerCreatureType, CreatureType.Tumerok, true, {}},
         ["Olthoi"] = {IntId.SlayerCreatureType, CreatureType.Olthoi, true, {}},
@@ -559,22 +559,21 @@ end
 local function RefreshCantrips() 
     characterTypeSelf = GetCharacterType()
     for id, sk in pairs(game.Character.Weenie.Skills) do
-        local skillName = skillcantripreplacements[id]
+        local skillName = SkillCantripReplacements[id]
         if skillName == nil then
             skillName = tostring(id)
         end
         if sk.Training == SkillTrainingType.Specialized then
-            cantripmap["Specialized Skills"][skillName] = {value = "N/A", color = Colors.White, icon = sk.Dat.IconId}
-        end
-        if sk.Training == SkillTrainingType.Trained then
-            cantripmap["Trained Skills"][skillName] = {value = "N/A", color = Colors.White, icon = sk.Dat.IconId}
+            TabCantrips["Specialized Skills"][skillName] = {value = "N/A", color = Colors.White, icon = sk.Dat.IconId}
+        elseif sk.Training == SkillTrainingType.Trained then
+            TabCantrips["Trained Skills"][skillName] = {value = "N/A", color = Colors.White, icon = sk.Dat.IconId}
         end
     end
-    for ward, _ in pairs(cantripmap["Protection Auras"]) do
-        cantripmap["Protection Auras"][ward].value = "N/A"
+    for ward, _ in pairs(TabCantrips["Protection Auras"]) do
+        TabCantrips["Protection Auras"][ward].value = "N/A"
     end
-    for attr, _ in pairs(cantripmap["Attributes"]) do
-        cantripmap["Attributes"][attr].value = "N/A"
+    for attr, _ in pairs(TabCantrips["Attributes"]) do
+        TabCantrips["Attributes"][attr].value = "N/A"
     end
     for _, e in ipairs(game.Character.ActiveEnchantments()) do
         --- @type Enchantment
@@ -582,29 +581,29 @@ local function RefreshCantrips()
         --- @type Spell
         local spell = game.Character.SpellBook.Get(ench.SpellId)
         if spell then
-            for type, _ in pairs(cantriptypes) do
-                for ward, _ in pairs(cantripmap["Protection Auras"]) do
+            for type, _ in pairs(CantripColors) do
+                for ward, _ in pairs(TabCantrips["Protection Auras"]) do
                     local matchstring = type .. " " .. ward
                     if spell.Name == matchstring then
-                        cantripmap["Protection Auras"][ward].value = type
+                        TabCantrips["Protection Auras"][ward].value = type
                     end
                 end
-                for skill, _ in pairs(cantripmap["Specialized Skills"]) do
+                for skill, _ in pairs(TabCantrips["Specialized Skills"]) do
                     local matchstring = type .. skill
                     if string.find(spell.Name:gsub("%s+",""),matchstring) then
-                        cantripmap["Specialized Skills"][skill].value = type
+                        TabCantrips["Specialized Skills"][skill].value = type
                     end
                 end
-                for skill, _ in pairs(cantripmap["Trained Skills"]) do
+                for skill, _ in pairs(TabCantrips["Trained Skills"]) do
                     local matchstring = type .. skill
                     if string.find(spell.Name:gsub("%s+",""),matchstring) then
-                        cantripmap["Trained Skills"][skill].value = type
+                        TabCantrips["Trained Skills"][skill].value = type
                     end
                 end
-                for attribute, _ in pairs(cantripmap["Attributes"]) do
+                for attribute, _ in pairs(TabCantrips["Attributes"]) do
                     local matchstring = type .. attribute
                     if string.find(spell.Name:gsub("%s+",""),matchstring) then
-                        cantripmap["Attributes"][attribute].value = type
+                        TabCantrips["Attributes"][attribute].value = type
                     end
                 end
             end
@@ -615,12 +614,12 @@ end
 -- Function Which Takes a WorldObject and Populates Weapons If It's a Tracked Weapon
 ---@param wobject WorldObject
 local function CategorizeWeapon(wobject)
-    for _, types in pairs(trackedWeaponTypes) do
+    for _, types in pairs(TabWeapons) do
         for _, values in pairs(types) do
             local weaponIntIDCheck = values[1]
             local weaponIntIDExpectedResult = values[2]
             if weaponIntIDCheck == IntId.CreatureType then
-                weaponIntIDExpectedResult = creatureTypeMap[weaponIntIDExpectedResult]
+                weaponIntIDExpectedResult = CreatureTypeMap[weaponIntIDExpectedResult]
             end
             local weaponIntIDResult = wobject.IntValues[weaponIntIDCheck]
             if weaponIntIDResult == weaponIntIDExpectedResult then
@@ -650,7 +649,7 @@ end
 -- Refresh and Populate Weapons Using Above Function
 local function RefreshWeapons()
     characterTypeSelf = GetCharacterType()
-    for _, types in pairs(trackedWeaponTypes) do
+    for _, types in pairs(TabWeapons) do
         for _, values in pairs(types) do
             -- Reset Table That Holds Player Weapons
             values[4] = {}
@@ -673,11 +672,11 @@ hud.OnRender.Add(function()
 
         -- Augmentations Tab
         if imgui.BeginTabItem("Augs") then
-            for category, augList in pairs(augmentations) do
+            for category, augList in pairs(TabAugmentations) do
                 imgui.Separator()
-                imgui.SetNextItemOpen(treeOpenStates[category] == nil or treeOpenStates[category])
-                treeOpenStates[category] = imgui.TreeNode(category)
-                if treeOpenStates[category] then
+                imgui.SetNextItemOpen(TreeOpenStates[category] == nil or TreeOpenStates[category])
+                TreeOpenStates[category] = imgui.TreeNode(category)
+                if TreeOpenStates[category] then
                     -- Create a new table for this category
                     local numColumns = 2
                     if imgui.BeginTable("Augmentations_" .. category, numColumns * 2) then
@@ -753,7 +752,7 @@ hud.OnRender.Add(function()
 
         -- Luminance Auras Tab
         if Quests:HasQuestFlag("oracleluminancerewardsaccess_1110") and imgui.BeginTabItem("Lum") then
-            for category, auraList in pairs(luminanceauras) do
+            for category, auraList in pairs(TabLuminanceAuras) do
                 imgui.SeparatorText(category)
                 if imgui.BeginTable("Luminance Auras_"..category, 2) then
                     imgui.TableSetupColumn("Lum Aura",im.ImGuiTableColumnFlags.WidthStretch,200)
@@ -804,7 +803,7 @@ hud.OnRender.Add(function()
                 imgui.TableSetupColumn("Recall Spell",im.ImGuiTableColumnFlags.WidthStretch,128)
                 imgui.TableSetupColumn("Status",im.ImGuiTableColumnFlags.WidthStretch,32)
                 imgui.TableHeadersRow()
-                for _,recallInfo in ipairs(recallspells) do
+                for _,recallInfo in ipairs(TabRecallSpells) do
                     local spellName = recallInfo[1]
                     local spellID = recallInfo[2]
                     local spellKnown = game.Character.SpellBook.IsKnown(spellID)
@@ -852,7 +851,7 @@ hud.OnRender.Add(function()
                 factionscore = char.IntValues[IntId.SocietyRankRadblo]
             end
             -- Determine Society Rank
-            for isocietyrank, thresholds in pairs(societyranks) do
+            for isocietyrank, thresholds in pairs(SocietyRanks) do
                 local lowerT = thresholds[1]
                 local upperT = thresholds[2]
                 if factionscore >= lowerT and factionscore <= upperT then
@@ -929,8 +928,8 @@ hud.OnRender.Add(function()
                 end
                 imgui.EndTable()
             end
-            for isocietyrank, questList in pairs(societyquests) do
-                local thresholds = societyranks[isocietyrank]
+            for isocietyrank, questList in pairs(TabSocietyQuests) do
+                local thresholds = SocietyRanks[isocietyrank]
                 local lowerT = thresholds[1]
                 if factionscore >= lowerT then
                     imgui.Separator()
@@ -1028,12 +1027,12 @@ hud.OnRender.Add(function()
         end
 
         -- Fachub Tab
-        if settings.showFacHub and imgui.BeginTabItem("FacHub") then
+        if Settings.showFacHub and imgui.BeginTabItem("FacHub") then
             if imgui.Button("Refresh Quests") then
                 Quests:Refresh()
             end
             imgui.TextDisabled("[F] = Flagged / [X] = Completed / [U] = Unknown")
-            for minLevel, fhquests in pairs(fachubquests) do
+            for minLevel, fhquests in pairs(TabFacilityHubQuests) do
                 --imgui.SeparatorText(minLevel.." Quests")
                 imgui.Separator()
                 if imgui.TreeNode(minLevel.." Quests") then
@@ -1084,11 +1083,11 @@ hud.OnRender.Add(function()
             if imgui.Button("Refresh Quests") then
                 Quests:Refresh()
             end
-            for category, flagInfo in pairs(characterflags) do
+            for category, flagInfo in pairs(TabCharacterFlags) do
                 imgui.Separator()
-                imgui.SetNextItemOpen(treeOpenStates[category] == nil or treeOpenStates[category])
-                treeOpenStates[category] = imgui.TreeNode(category)
-                if treeOpenStates[category] then
+                imgui.SetNextItemOpen(TreeOpenStates[category] == nil or TreeOpenStates[category])
+                TreeOpenStates[category] = imgui.TreeNode(category)
+                if TreeOpenStates[category] then
                     if imgui.BeginTable("Character Flags_"..category, 2) then
                         imgui.TableSetupColumn("Flag 1",im.ImGuiTableColumnFlags.WidthStretch,128)
                         imgui.TableSetupColumn("Flag 1 Points",im.ImGuiTableColumnFlags.WidthStretch,64)
@@ -1146,16 +1145,16 @@ hud.OnRender.Add(function()
             if imgui.Button("Refresh") then
                 RefreshCantrips()
             end
-            for cantripgroup, cantrips in pairs(cantripmap) do
+            for cantripgroup, cantrips in pairs(TabCantrips) do
                 imgui.Separator()
-                imgui.SetNextItemOpen(treeOpenStates[cantripgroup] == nil or treeOpenStates[cantripgroup])
-                treeOpenStates[cantripgroup] = imgui.TreeNode(cantripgroup)
-                if treeOpenStates[cantripgroup] then
+                imgui.SetNextItemOpen(TreeOpenStates[cantripgroup] == nil or TreeOpenStates[cantripgroup])
+                TreeOpenStates[cantripgroup] = imgui.TreeNode(cantripgroup)
+                if TreeOpenStates[cantripgroup] then
                     if imgui.BeginTable(cantripgroup,2) then
                         imgui.TableSetupColumn(cantripgroup,im.ImGuiTableColumnFlags.WidthStretch,64)
                         imgui.TableSetupColumn("Status",im.ImGuiTableColumnFlags.WidthStretch,32)
                         for effect, info in pairs(cantrips) do
-                            if not (info.value == "N/A" and settings.hideMissingCantrips) then
+                            if not (info.value == "N/A" and Settings.hideMissingCantrips) then
                                 local iconID = info.icon
                                 local iconBackgroundID = info.iconBackground
                                 local spellIcon = info.spellIcon
@@ -1191,7 +1190,7 @@ hud.OnRender.Add(function()
                                 end
                                 imgui.TextColored(info.color, effect)
                                 imgui.TableSetColumnIndex(1)
-                                imgui.TextColored(cantriptypes[info.value], info.value)
+                                imgui.TextColored(CantripColors[info.value], info.value)
                             end
                         end
                         imgui.EndTable()
@@ -1209,11 +1208,11 @@ hud.OnRender.Add(function()
             end
             -- TODO: Merge Slayers / Resistance Cleaving
             -- TODO: Color Weapons Based On Damage Type
-            for cat, types in pairs(trackedWeaponTypes) do
+            for cat, types in pairs(TabWeapons) do
                 imgui.Separator()
-                imgui.SetNextItemOpen(treeOpenStates[cat] == nil or treeOpenStates[cat])
-                treeOpenStates[cat] = imgui.TreeNode(cat)
-                if treeOpenStates[cat] then
+                imgui.SetNextItemOpen(TreeOpenStates[cat] == nil or TreeOpenStates[cat])
+                TreeOpenStates[cat] = imgui.TreeNode(cat)
+                if TreeOpenStates[cat] then
                     if imgui.BeginTable(cat,2) then
                         imgui.TableSetupColumn(cat,im.ImGuiTableColumnFlags.WidthStretch,16)
                         imgui.TableSetupColumn("Weapon Name",im.ImGuiTableColumnFlags.WidthStretch,32)
@@ -1222,8 +1221,8 @@ hud.OnRender.Add(function()
                             local essential = values[3]
                             local myWeapons = values[4]
                             local skipCharacterTypes = values[5]
-                            local skip = ((cat == "Rending / Resistance Cleaving") and (not essential) and settings.hideResistanceCleavingWeapons)
-                                or ((cat == "Creature Slayer") and (not essential) and settings.hideNonEssentialCreatureSlayers)
+                            local skip = ((cat == "Rending / Resistance Cleaving") and (not essential) and Settings.hideResistanceCleavingWeapons)
+                                or ((cat == "Creature Slayer") and (not essential) and Settings.hideNonEssentialCreatureSlayers)
                             if skipCharacterTypes then
                                 for _, ctype in ipairs(skipCharacterTypes) do
                                     if characterTypeSelf == ctype then
@@ -1264,7 +1263,7 @@ hud.OnRender.Add(function()
                                             end
                                         end
                                     end
-                                elseif not settings.hideUnacquiredWeapons then
+                                elseif not Settings.hideUnacquiredWeapons then
                                     imgui.TableNextRow()
                                     imgui.TableSetColumnIndex(0)
                                     imgui.TextColored(Colors.White,type)
@@ -1282,7 +1281,7 @@ hud.OnRender.Add(function()
         end
 
         -- General Quests Tab
-        if settings.showQuests and imgui.BeginTabItem("Quests") then
+        if Settings.showQuests and imgui.BeginTabItem("Quests") then
             if imgui.Button("Refresh Quests") then
                 Quests:Refresh()
             end
@@ -1360,23 +1359,23 @@ hud.OnRender.Add(function()
         -- Settings Tab
         if imgui.BeginTabItem("Settings") then
             imgui.SeparatorText("Tab Visibility")
-            if imgui.Checkbox("Show Fac Hub",settings.showFacHub) then
-                settings.showFacHub = not settings.showFacHub
+            if imgui.Checkbox("Show Fac Hub",Settings.showFacHub) then
+                Settings.showFacHub = not Settings.showFacHub
             end
-            if imgui.Checkbox("Show Quests",settings.showQuests) then
-                settings.showQuests = not settings.showQuests
+            if imgui.Checkbox("Show Quests",Settings.showQuests) then
+                Settings.showQuests = not Settings.showQuests
             end
-            if imgui.Checkbox("Hide Unacquired Weapons",settings.hideUnacquiredWeapons) then
-                settings.hideUnacquiredWeapons = not settings.hideUnacquiredWeapons
+            if imgui.Checkbox("Hide Unacquired Weapons",Settings.hideUnacquiredWeapons) then
+                Settings.hideUnacquiredWeapons = not Settings.hideUnacquiredWeapons
             end
-            if imgui.Checkbox("Hide Resistance Cleaving Weapons",settings.hideResistanceCleavingWeapons) then
-                settings.hideResistanceCleavingWeapons = not settings.hideResistanceCleavingWeapons
+            if imgui.Checkbox("Hide Resistance Cleaving Weapons",Settings.hideResistanceCleavingWeapons) then
+                Settings.hideResistanceCleavingWeapons = not Settings.hideResistanceCleavingWeapons
             end
-            if imgui.Checkbox("Hide Non-Essential Slayer Weapons",settings.hideNonEssentialCreatureSlayers) then
-                settings.hideNonEssentialCreatureSlayers = not settings.hideNonEssentialCreatureSlayers
+            if imgui.Checkbox("Hide Non-Essential Slayer Weapons",Settings.hideNonEssentialCreatureSlayers) then
+                Settings.hideNonEssentialCreatureSlayers = not Settings.hideNonEssentialCreatureSlayers
             end
-            if imgui.Checkbox("Hide Missing Cantrips",settings.hideMissingCantrips) then
-                settings.hideMissingCantrips = not settings.hideMissingCantrips
+            if imgui.Checkbox("Hide Missing Cantrips",Settings.hideMissingCantrips) then
+                Settings.hideMissingCantrips = not Settings.hideMissingCantrips
             end
             imgui.EndTabItem()
         end
