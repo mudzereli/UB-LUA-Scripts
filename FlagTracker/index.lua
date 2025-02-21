@@ -2,7 +2,7 @@ local im = require("imgui")
 local ubviews = require("utilitybelt.views")
 local Quests = require("quests")
 local imgui = im.ImGui
-local version = "1.7.6"
+local version = "1.7.7"
 local currentHUDPosition = nil
 local defaultHUDposition = Vector2.new(500,100)
 local iconVectorSize = Vector2.new(16,16)
@@ -190,65 +190,65 @@ local augmentations = {
     -- 4 = NPC Trainer
     -- 5 = NPC Trainer Location
     ["Death Augs"] = {
-        {"Keep Items",IntId.AugmentationLessDeathItemLoss,3,"Rohula bint Ludun","Ayan Baqur"},
-        {"Keep Spells",IntId.AugmentationSpellsRemainPastDeath,1,"Erik Festus","Ayan Baqur"}
+        {name = "Keep Items", id = IntId.AugmentationLessDeathItemLoss, repeatable = 3, trainer = "Rohula bint Ludun", location = "Ayan Baqur"},
+        {name = "Keep Spells", id = IntId.AugmentationSpellsRemainPastDeath, repeatable = 1, trainer = "Erik Festus", location = "Ayan Baqur"}
     },
     ["Skill Augs"] = {
-        {"+5 All Skills",IntId.AugmentationJackOfAllTrades,1,"Arianna the Adept","Bandit Castle"},
-        {"+10 Melee Skills",IntId.AugmentationSkilledMelee,1,"Carlito Gallo","Silyun"},
-        {"+10 Magic Skills",IntId.AugmentationSkilledMagic,1,"Rahina bint Zalanis","Zaikhal"},
-        {"+10 Missile Skills",IntId.AugmentationSkilledMissile,1,"Kilaf","Zaikhal"}
+        {name = "+5 All Skills", id = IntId.AugmentationJackOfAllTrades, repeatable = 1, trainer = "Arianna the Adept", location = "Bandit Castle"},
+        {name = "+10 Melee Skills", id = IntId.AugmentationSkilledMelee, repeatable = 1, trainer = "Carlito Gallo", location = "Silyun"},
+        {name = "+10 Magic Skills", id = IntId.AugmentationSkilledMagic, repeatable = 1, trainer = "Rahina bint Zalanis", location = "Zaikhal"},
+        {name = "+10 Missile Skills", id = IntId.AugmentationSkilledMissile, repeatable = 1, trainer = "Kilaf", location = "Zaikhal"}
     },
     ["Rating Augs"] = {
-        {"25%% Crit Protection",IntId.AugmentationCriticalDefense,1,"Piersanti Linante","Sanamar"},
-        {"1%% Critical Chance",IntId.AugmentationCriticalExpertise,1,"Anfram Mellow","Ayan Baqur"},
-        {"3%% Critical Damage",IntId.AugmentationCriticalPower,1,"Alishia bint Aldan","Ayan Baqur"},
-        {"3%% Damage Rating",IntId.AugmentationDamageBonus,1,"Neela Nashua","Bandit Castle"},
-        {"3%% Damage Reduction",IntId.AugmentationDamageReduction,1,"Emily Yarow","Cragstone"}
+        {name = "25%% Crit Protection", id = IntId.AugmentationCriticalDefense, repeatable = 1, trainer = "Piersanti Linante", location = "Sanamar"},
+        {name = "1%% Critical Chance", id = IntId.AugmentationCriticalExpertise, repeatable = 1, trainer = "Anfram Mellow", location = "Ayan Baqur"},
+        {name = "3%% Critical Damage", id = IntId.AugmentationCriticalPower, repeatable = 1, trainer = "Alishia bint Aldan", location = "Ayan Baqur"},
+        {name = "3%% Damage Rating", id = IntId.AugmentationDamageBonus, repeatable = 1, trainer = "Neela Nashua", location = "Bandit Castle"},
+        {name = "3%% Damage Reduction", id = IntId.AugmentationDamageReduction, repeatable = 1, trainer = "Emily Yarow", location = "Cragstone"}
     },
     ["Burden / Pack Augs"] = {
-        {"Extra Carrying Capacity",IntId.AugmentationIncreasedCarryingCapacity,5,"Husoon","Zaikhal"},
-        {"Extra Pack Slot",IntId.AugmentationExtraPackSlot,1,"Dumida bint Ruminre","Zaikhal"},
-        {"Infused War Magic",IntId.AugmentationInfusedWarMagic,1,"Raphel Detante","Silyun"},
-        {"Infused Void Magic",IntId.AugmentationInfusedVoidMagic,1,"Morathe","Candeth Keep"},
-        {"Infused Creature Magic",IntId.AugmentationInfusedCreatureMagic,1,"Gustuv Lansdown","Cragstone"},
-        {"Infused Life Magic",IntId.AugmentationInfusedLifeMagic,1,"Akemi Fei","Hebian-To"},
-        {"Infused Item Magic",IntId.AugmentationInfusedItemMagic,1,"Gan Fo","Hebian-To"}
+        {name = "Extra Carrying Capacity", id = IntId.AugmentationIncreasedCarryingCapacity, repeatable = 5, trainer = "Husoon", location = "Zaikhal"},
+        {name = "Extra Pack Slot", id = IntId.AugmentationExtraPackSlot, repeatable = 1, trainer = "Dumida bint Ruminre", location = "Zaikhal"},
+        {name = "Infused War Magic", id = IntId.AugmentationInfusedWarMagic, repeatable = 1, trainer = "Raphel Detante", location = "Silyun"},
+        {name = "Infused Void Magic", id = IntId.AugmentationInfusedVoidMagic, repeatable = 1, trainer = "Morathe", location = "Candeth Keep"},
+        {name = "Infused Creature Magic", id = IntId.AugmentationInfusedCreatureMagic, repeatable = 1, trainer = "Gustuv Lansdown", location = "Cragstone"},
+        {name = "Infused Life Magic", id = IntId.AugmentationInfusedLifeMagic, repeatable = 1, trainer = "Akemi Fei", location = "Hebian-To"},
+        {name = "Infused Item Magic", id = IntId.AugmentationInfusedItemMagic, repeatable = 1, trainer = "Gan Fo", location = "Hebian-To"}
     },
     ["Misc Augs"] = {
-        {"10%% Health Increase",nil,1,"Donatello Linante","Silyun"},
-        {"Increased Spell Duration",IntId.AugmentationIncreasedSpellDuration,5,"Nawamara Ujio","Mayoi"},
-        {"Faster HP Regen",IntId.AugmentationFasterRegen,2,"Alison Dulane","Bandit Castle"},
-        {"5%% Experience Increase",IntId.AugmentationBonusXp,1,"Rickard Dumalia","Silyun"}
+        {name = "10%% Health Increase", id = nil, repeatable = 1, trainer = "Donatello Linante", location = "Silyun"},
+        {name = "Increased Spell Duration", id = IntId.AugmentationIncreasedSpellDuration, repeatable = 5, trainer = "Nawamara Ujio", location = "Mayoi"},
+        {name = "Faster HP Regen", id = IntId.AugmentationFasterRegen, repeatable = 2, trainer = "Alison Dulane", location = "Bandit Castle"},
+        {name = "5%% Experience Increase", id = IntId.AugmentationBonusXp, repeatable = 1, trainer = "Rickard Dumalia", location = "Silyun"}
     },
     ["Salvage Augs"] = {
-        {"Specialized Weapon Tinkering",IntId.AugmentationSpecializeWeaponTinkering,1,"Lenor Turk","Cragstone"},
-        {"Specialized Armor Tinkering",IntId.AugmentationSpecializeArmorTinkering,1,"Joshun Felden","Cragstone"},
-        {"Specialized Item Tinkering",IntId.AugmentationSpecializeItemTinkering,1,"Brienne Carlus","Cragstone"},
-        {"Specialized Magic Item Tinkering",IntId.AugmentationSpecializeMagicItemTinkering,1,"Burrell Sammrun","Cragstone"},
+        {name = "Specialized Weapon Tinkering", id = IntId.AugmentationSpecializeWeaponTinkering, repeatable = 1, trainer = "Lenor Turk", location = "Cragstone"},
+        {name = "Specialized Armor Tinkering", id = IntId.AugmentationSpecializeArmorTinkering, repeatable = 1, trainer = "Joshun Felden", location = "Cragstone"},
+        {name = "Specialized Item Tinkering", id = IntId.AugmentationSpecializeItemTinkering, repeatable = 1, trainer = "Brienne Carlus", location = "Cragstone"},
         --{"Specialized GearCraft",IntId.AugmentationSpecializeGearcraft,1,"Alex Brummel","Cragstone"},
-        {"Specialized Salvaging",IntId.AugmentationSpecializeSalvaging,1,"Robert Crow","Cragstone"},
-        {"25%% More Salvage",IntId.AugmentationBonusSalvage,4,"Kris Cennis","Cragstone"},
-        {"5%% Imbue Chance",IntId.AugmentationBonusImbueChance,1,"Lug","Oolutanga's Refuge"}
+        {name = "Specialized Magic Item Tinkering", id = IntId.AugmentationSpecializeMagicItemTinkering, repeatable = 1, trainer = "Burrell Sammrun", location = "Cragstone"},
+        {name = "Specialized Salvaging", id = IntId.AugmentationSpecializeSalvaging, repeatable = 1, trainer = "Robert Crow", location = "Cragstone"},
+        {name = "25%% More Salvage", id = IntId.AugmentationBonusSalvage, repeatable = 4, trainer = "Kris Cennis", location = "Cragstone"},
+        {name = "5%% Imbue Chance", id = IntId.AugmentationBonusImbueChance, repeatable = 1, trainer = "Lug", location = "Oolutanga's Refuge"}
     },
     ["Stat Augs"] = {
-        {"All Stats",IntId.AugmentationInnateFamily,10},
-        {"Strength",IntId.AugmentationInnateStrength,10,"Fiun Luunere","Fiun Outpost"},
-        {"Endurance",IntId.AugmentationInnateEndurance,10,"Fiun Ruun","Fiun Outpost"},
-        {"Coordination",IntId.AugmentationInnateCoordination,10,"Fiun Bayaas","Fiun Outpost"},
-        {"Quickness",IntId.AugmentationInnateQuickness,10,"Fiun Riish","Fiun Outpost"},
-        {"Focus",IntId.AugmentationInnateFocus,10,"Fiun Vasherr","Fiun Outpost"},
-        {"Self",IntId.AugmentationInnateSelf,10,"Fiun Noress","Fiun Outpost"}
+        {name = "All Stats", id = IntId.AugmentationInnateFamily, repeatable = 10},
+        {name = "Strength", id = IntId.AugmentationInnateStrength, repeatable = 10, trainer = "Fiun Luunere", location = "Fiun Outpost"},
+        {name = "Endurance", id = IntId.AugmentationInnateEndurance, repeatable = 10, trainer = "Fiun Ruun", location = "Fiun Outpost"},
+        {name = "Coordination", id = IntId.AugmentationInnateCoordination, repeatable = 10, trainer = "Fiun Bayaas", location = "Fiun Outpost"},
+        {name = "Quickness", id = IntId.AugmentationInnateQuickness, repeatable = 10, trainer = "Fiun Riish", location = "Fiun Outpost"},
+        {name = "Focus", id = IntId.AugmentationInnateFocus, repeatable = 10, trainer = "Fiun Vasherr", location = "Fiun Outpost"},
+        {name = "Self", id = IntId.AugmentationInnateSelf, repeatable = 10, trainer = "Fiun Noress", location = "Fiun Outpost"}
     },
     ["Resistance Augs"] = {
-        {"All Resistances",IntId.AugmentationResistanceFamily,2},
-        {"Blunt",IntId.AugmentationResistanceBlunt,2,"Nawamara Dia","Hebian-To"},
-        {"Pierce",IntId.AugmentationResistancePierce,2,"Kyujo Rujen","Hebian-To"},
-        {"Slashing",IntId.AugmentationResistanceSlash,2,"Ilin Wis","Hebian-To"},
-        {"Fire",IntId.AugmentationResistanceFire,2,"Rikshen Ri","Hebian-To"},
-        {"Frost",IntId.AugmentationResistanceFrost,2,"Lu Bao","Hebian-To"},
-        {"Acid",IntId.AugmentationResistanceAcid,2,"Shujio Milao","Hebian-To"},
-        {"Lightning",IntId.AugmentationResistanceLightning,2,"Enli Yuo","Hebian-To"}
+        {name = "All Resistances", id = IntId.AugmentationResistanceFamily, repeatable = 2},
+        {name = "Blunt", id = IntId.AugmentationResistanceBlunt, repeatable = 2, trainer = "Nawamara Dia", location = "Hebian-To"},
+        {name = "Pierce", id = IntId.AugmentationResistancePierce, repeatable = 2, trainer = "Kyujo Rujen", location = "Hebian-To"},
+        {name = "Slashing", id = IntId.AugmentationResistanceSlash, repeatable = 2, trainer = "Ilin Wis", location = "Hebian-To"},
+        {name = "Fire", id = IntId.AugmentationResistanceFire, repeatable = 2, trainer = "Rikshen Ri", location = "Hebian-To"},
+        {name = "Frost", id = IntId.AugmentationResistanceFrost, repeatable = 2, trainer = "Lu Bao", location = "Hebian-To"},
+        {name = "Acid", id = IntId.AugmentationResistanceAcid, repeatable = 2, trainer = "Shujio Milao", location = "Hebian-To"},
+        {name = "Lightning", id = IntId.AugmentationResistanceLightning, repeatable = 2, trainer = "Enli Yuo", location = "Hebian-To"}
     }
 }
 -- Tree Layout for Luminance Auras
@@ -689,11 +689,11 @@ hud.OnRender.Add(function()
                         local currentColumnIndex = 0
 
                         for _, augInfo in ipairs(augList) do
-                            local prefix = augInfo[1]
-                            local augID = augInfo[2]
-                            local cap = augInfo[3]
-                            local npc = augInfo[4]
-                            local town = augInfo[5]
+                            local prefix = augInfo.name
+                            local augID = augInfo.id
+                            local cap = augInfo.repeatable
+                            local npc = augInfo.trainer
+                            local town = augInfo.location
                             local value = 0
                             if augID == nil then
                                 value = game.Character.GetInventoryCount("Asheron's Lesser Benediction")
