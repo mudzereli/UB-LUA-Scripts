@@ -2,7 +2,7 @@ local im = require("imgui")
 local ubviews = require("utilitybelt.views")
 local Quests = require("quests")
 local imgui = im.ImGui
-local version = "1.7.9"
+local version = "1.7.10"
 local currentHUDPosition = nil
 local defaultHUDposition = Vector2.new(500,100)
 local iconVectorSize = Vector2.new(16,16)
@@ -757,10 +757,8 @@ hud.OnRender.Add(function()
                                 currentColumnIndex = (currentColumnIndex + 1) % (numColumns * 2)
                             end
                         end
-
                         imgui.EndTable()
                     end
-
                     imgui.TreePop()
                 end
             end
@@ -777,6 +775,7 @@ hud.OnRender.Add(function()
                     imgui.TableSetupColumn("Lum Aura Points",im.ImGuiTableColumnFlags.WidthStretch,35)
                     imgui.TableNextRow()
                     imgui.TableSetColumnIndex(0)
+                    local seerAuraCount = 0
                     for _, auraInfo in ipairs(auraList) do
                         local value = char.Value(auraInfo[2]) or 0
                         local prefix = auraInfo[1]
@@ -796,6 +795,7 @@ hud.OnRender.Add(function()
                         end
 
                         if not skip then
+                            seerAuraCount = seerAuraCount + 1
                             if value >= cap then
                                 color = Colors.Green
                             elseif value == 0 then
@@ -808,6 +808,11 @@ hud.OnRender.Add(function()
                             imgui.TableSetColumnIndex(1)
                             imgui.TextColored(color, value .. "/" .. cap)
                         end
+                    end
+                    if seerAuraCount == 0 then
+                        imgui.TableNextRow()
+                        imgui.TableSetColumnIndex(0)
+                        imgui.TextColored(Colors.Red, "No Seer Auras")
                     end
                     imgui.EndTable()
                 end
@@ -1364,7 +1369,7 @@ hud.OnRender.Add(function()
                     imgui.TableSetColumnIndex(3)
                     imgui.TextColored(color, quest.maxsolves) -- MaxSolves
                     imgui.TableSetColumnIndex(4)
-                    imgui.TextColored(color, Quests.Delta) -- Delta
+                    imgui.TextColored(color, quest.delta) -- Delta
                     imgui.TableSetColumnIndex(5)
                     imgui.TextColored(color, Quests:GetTimeUntilExpire(quest)) -- Expired
                 end
