@@ -2,7 +2,7 @@ local im = require("imgui")
 local ubviews = require("utilitybelt.views")
 local Quests = require("quests")
 local imgui = im.ImGui
-local version = "1.7.10"
+local version = "1.8.0"
 local currentHUDPosition = nil
 local defaultHUDposition = Vector2.new(500,100)
 local iconVectorSize = Vector2.new(16,16)
@@ -16,6 +16,20 @@ local textures = {}
     - Tracking for Biting Strike / Crushing Blow / Armor Cleaving
     - Better Tooltips
 ]]--
+
+-- Cached Data for Performance
+local CachedData = {
+    LuminanceFlagged = false,
+    FactionBits = nil,
+    SkillTrainingMagicItemTinkering = SkillTrainingType.Untrained,
+    SkillTrainingItemTinkering = SkillTrainingType.Untrained,
+    SkillTrainingArmorTinkering = SkillTrainingType.Untrained,
+    SkillTrainingWeaponTinkering = SkillTrainingType.Untrained,
+    AugInnateFamily = 0,
+    AugResistanceFamily = 0,
+    InventoryCountAsheronsBenediction = 0,
+    LastUpdatedTime = os.clock()
+}
 
 -- LUA Table for Color Codes
 local Colors = {
@@ -512,7 +526,7 @@ local TabWeapons = {
         ["Shadow"] = {IntId.SlayerCreatureType, CreatureType.Shadow, true, {}},
         ["Virindi"] = {IntId.SlayerCreatureType, CreatureType.Virindi, true, {}},
         ["Anekshay"] = {IntId.SlayerCreatureType, CreatureType.Anekshay, true, {}},
-        ["Burun"] = {IntId.SlayerCreatureType, CreatureType.Burun, true, {}},
+        ["Burun"] = {IntId.SlayerCreatureType, CreatureType.Burun, false, {}},
         ["Mukkir"] = {IntId.SlayerCreatureType, CreatureType.Mukkir, true, {}},
         ["Skeleton"] = {IntId.SlayerCreatureType, CreatureType.Skeleton, true, {}},
         ["Undead"] = {IntId.SlayerCreatureType, CreatureType.Undead, true, {}},
@@ -677,6 +691,20 @@ local function RefreshWeapons()
     RefreshWeaponsFromInventory(game.Character.Inventory)
 end
 
+-- Update Cached Data
+local function UpdateCachedData()
+    CachedData.LuminanceFlagged = Quests:HasQuestFlag("oracleluminancerewardsaccess_1110")
+    CachedData.FactionBits = game.Character.Weenie.IntValues[IntId.Faction1Bits]
+    CachedData.SkillTrainingMagicItemTinkering = game.Character.Weenie.Skills[SkillId.MagicItemTinkering].Training
+    CachedData.SkillTrainingItemTinkering = game.Character.Weenie.Skills[SkillId.ItemTinkering].Training
+    CachedData.SkillTrainingWeaponTinkering = game.Character.Weenie.Skills[SkillId.WeaponTinkering].Training
+    CachedData.SkillTrainingArmorTinkering = game.Character.Weenie.Skills[SkillId.ArmorTinkering].Training
+    CachedData.InventoryCountAsheronsBenediction = game.Character.GetInventoryCount("Asheron's Lesser Benediction")
+    CachedData.AugInnateFamily = game.Character.Weenie.Value(IntId.AugmentationInnateFamily)
+    CachedData.AugResistanceFamily = game.Character.Weenie.Value(IntId.AugmentationResistanceFamily)
+    CachedData.LastUpdatedTime = os.clock()
+end
+
 print("[LUA]: Loading FlagTracker v"..version)
 
 local hud = ubviews.Huds.CreateHud("FlagTracker v"..version,0x06005A8A)
@@ -686,6 +714,9 @@ hud.WindowSettings = im.ImGuiWindowFlags.AlwaysAutoResize
 hud.OnRender.Add(function()
     local char = game.Character.Weenie
     if char == nil then return end
+    if os.clock() - CachedData.LastUpdatedTime >= 3 then
+        UpdateCachedData()
+    end
     if imgui.BeginTabBar("Flag Tracker Bar") then
 
         -- Augmentations Tab
@@ -704,7 +735,7 @@ hud.OnRender.Add(function()
                         imgui.TableSetupColumn("Aug 2 Points", im.ImGuiTableColumnFlags.WidthStretch, 35)
 
                         local currentColumnIndex = 0
-
+                        
                         for _, augInfo in ipairs(augList) do
                             local prefix = augInfo.name
                             local augID = augInfo.id
@@ -713,17 +744,17 @@ hud.OnRender.Add(function()
                             local town = augInfo.location
                             local value = 0
                             if augID == nil then
-                                value = game.Character.GetInventoryCount("Asheron's Lesser Benediction")
+                                value = CachedData.InventoryCountAsheronsBenediction
                             else
                                 value = char.Value(augID)
                             end
 
-                            local skip = (category == "Stat Augs" and char.Value(IntId.AugmentationInnateFamily) == 10 and value == 0) 
-                                      or (category == "Resistance Augs" and char.Value(IntId.AugmentationResistanceFamily) == 2 and value == 0)
-                                      or (augID == IntId.AugmentationSpecializeMagicItemTinkering and char.Skills[SkillId.MagicItemTinkering].Training == SkillTrainingType.Untrained)
-                                      or (augID == IntId.AugmentationSpecializeWeaponTinkering and char.Skills[SkillId.WeaponTinkering].Training == SkillTrainingType.Untrained)
-                                      or (augID == IntId.AugmentationSpecializeArmorTinkering and char.Skills[SkillId.ArmorTinkering].Training == SkillTrainingType.Untrained)
-                                      or (augID == IntId.AugmentationSpecializeItemTinkering and char.Skills[SkillId.ItemTinkering].Training == SkillTrainingType.Untrained)
+                            local skip = (category == "Stat Augs" and CachedData.AugInnateFamily == 10 and value == 0) 
+                                      or (category == "Resistance Augs" and CachedData.AugResistanceFamily == 2 and value == 0)
+                                      or (augID == IntId.AugmentationSpecializeMagicItemTinkering and CachedData.SkillTrainingMagicItemTinkering == SkillTrainingType.Untrained)
+                                      or (augID == IntId.AugmentationSpecializeWeaponTinkering and CachedData.SkillTrainingWeaponTinkering == SkillTrainingType.Untrained)
+                                      or (augID == IntId.AugmentationSpecializeArmorTinkering and CachedData.SkillTrainingArmorTinkering == SkillTrainingType.Untrained)
+                                      or (augID == IntId.AugmentationSpecializeItemTinkering and CachedData.SkillTrainingItemTinkering == SkillTrainingType.Untrained)
 
                             if not skip then
                                 local color = Colors.Yellow
@@ -767,7 +798,7 @@ hud.OnRender.Add(function()
         end
 
         -- Luminance Auras Tab
-        if Quests:HasQuestFlag("oracleluminancerewardsaccess_1110") and imgui.BeginTabItem("Lum") then
+        if CachedData.LuminanceFlagged and imgui.BeginTabItem("Lum") then
             for category, auraList in pairs(TabLuminanceAuras) do
                 imgui.SeparatorText(category)
                 if imgui.BeginTable("Luminance Auras_"..category, 2) then
@@ -850,13 +881,13 @@ hud.OnRender.Add(function()
         end
         
         -- Society Tab
-        if char.IntValues[IntId.Faction1Bits] ~= nil
-                and char.IntValues[IntId.Faction1Bits] ~= 0 
+        if CachedData.FactionBits ~= nil
+                and CachedData.FactionBits ~= 0 
                 and imgui.BeginTabItem("Society") then
             if imgui.Button("Refresh Quests") then
                 Quests:Refresh()
             end
-            local factionbits = char.IntValues[IntId.Faction1Bits]
+            local factionbits = CachedData.FactionBits
             local factionscore = 0
             local nextfactionrankscore = 0
             local society = ""
