@@ -2,7 +2,7 @@ local im = require("imgui")
 local ubviews = require("utilitybelt.views")
 local Quests = require("quests")
 local imgui = im.ImGui
-local version = "1.8.0"
+local version = "1.8.1"
 local currentHUDPosition = nil
 local defaultHUDposition = Vector2.new(500,100)
 local iconVectorSize = Vector2.new(16,16)
@@ -200,7 +200,12 @@ local MapCreatureType = {
 -- Skill Replacement for Cantrips That Have Different Names Than Their Skill
 local MapSkillCantripReplacements = {
     [SkillId.MagicDefense] = "MagicResistance",
-    [SkillId.MeleeDefense] = "Invulnerability"
+    [SkillId.MeleeDefense] = "Invulnerability",
+    [SkillId.MissileDefense] = "Impgrenability",
+    [SkillId.MissleWeapons] = "MissileWeapon",
+    [SkillId.HeavyWeapons] = "HeavyWeapon",
+    [SkillId.LightWeapons] = "LightWeapon",
+    [SkillId.FinesseWeapons] = "FinesseWeapon"
 }
 
 -- Color Map for Cantrip Levels
