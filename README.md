@@ -3,7 +3,7 @@
 ## Installation
 
 1. Make sure your [Decal](https://www.decaldev.com) is up to date: `2.9.8.3`
-2. Make sure you are using the latest beta of [UtilityBelt](https://gitlab.com/utilitybelt/utilitybelt.gitlab.io/-/packages/)
+2. Make sure you are using the beta version of [UtilityBelt](https://gitlab.com/utilitybelt/utilitybelt.gitlab.io/-/packages/41296387)
 3. Make sure you are using the latest [UtilityBelt Service](https://gitlab.com/utilitybelt/utilitybelt.service/-/releases)
 4. Download the [LUA Scripts](https://github.com/mudzereli/UB-LUA-Scripts/archive/refs/heads/main.zip)
 5. Extract the folders for the scripts you want to use to your `UtilityBelt\scripts` folder.
