@@ -13,7 +13,7 @@ local libQuest = {
 ---@field expiretime number
 
 local function OnChatText(evt)
-    local taskname, solves, timestamp, description, maxsolves, delta = string.match(evt.Message, "([%w%s%(%)-]+) %- (%d+) solves %((%d+)%)\"([^\"]+)\" (%-?%d+) (%d+)")
+    local taskname, solves, timestamp, description, maxsolves, delta = string.match(evt.Message, "([%w%s%(%)-]+) %- (%d+) solves %((%d+)%)%s*\"([^\"]+)\" (%-?%d+) (%d+)")
     if taskname and solves and timestamp and description and maxsolves and delta then
         table.insert(libQuest.List, {id=taskname,solves=solves,timestamp=timestamp,description=description,maxsolves=maxsolves,delta=delta,expiretime=timestamp+delta})
         libQuest.Dictionary[taskname] = {id=taskname,solves=solves,timestamp=timestamp,description=description,maxsolves=maxsolves,delta=delta,expiretime=timestamp+delta}
