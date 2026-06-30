@@ -28,6 +28,65 @@ local lootingColosseumVault = false
 local lootColosseumVault = false
 local turningInColoRings = false
 local hudPosition = nil
+--- @type WorldObject
+local SelectedObject = nil
+
+function OnObjectSelect(evt)
+    SelectedObject = game.World.Get(evt.ObjectId)
+end
+
+local function round(num, numDecimalPlaces)
+    local mult = 10^(numDecimalPlaces or 0)
+    return math.floor(num * mult + 0.5) / mult
+end
+
+function FakeTinker()
+    if SelectedObject ~= nil then
+        print("Selected: "..SelectedObject.Name)
+        local d = SelectedObject.Value(IntId.Damage)
+        print("Damage = "..d)
+        local v = SelectedObject.Value(FloatId.DamageVariance,0)
+        print("Variance = "..v)
+        local m = (1-v)*d
+        print("MinDamage = "..m)
+        local a = (m+d)/2
+        print("AvgDamage = "..a)
+        for i = 1,9 do
+            local ironTink = TinkIron(d,v)
+            local graniteTink = TinkGranite(d,v)
+            if graniteTink[4] > ironTink[4] then
+                m = graniteTink[1]
+                d = graniteTink[2]
+                v = graniteTink[3]
+                a = graniteTink[4]
+                print("#"..i.." V = ["..round(a,1).."] "..round(m,2).."-"..d.." ("..round(v,2)..")")
+            else
+                m = ironTink[1]
+                d = ironTink[2]
+                v = ironTink[3]
+                a = ironTink[4]
+                print("#"..i.." D = ["..round(a,1).."] "..round(m,2).."-"..d.." ("..round(v,2)..")")
+            end
+        end
+        m = (1-v)*d
+        a = (m+d)/2
+        print("Final = ["..round(a,1).."] "..round(m,2).."-"..d.." ("..round(v,2)..")")
+    end
+end
+
+function TinkIron(d,v)
+    d = d+1
+    local m = (1-v)*d
+    local a = (m+d)/2
+    return {m,d,v,a}
+end
+
+function TinkGranite(d,v)
+    v = v*0.8
+    local m = (1-v)*d
+    local a = (m+d)/2
+    return {m,d,v,a}
+end
 
 function TryApplyIvoryToRings()
     local RingToUse = nil
@@ -191,6 +250,46 @@ function MakePyrealNuggets()
     end
 end
 
+function MakeCrystalFragments()
+    local wrappedCrackedShards = {}
+    local unwrappedCrackedShards = {}
+    local tinyShards = {}
+    local smallShards = {}
+    for _, action in ipairs(game.ActionQueue.Queue) do
+       game.ActionQueue.Remove(action)
+    end
+    for _, item in ipairs(game.Character.Inventory) do
+        if item.Name == "Wrapped Cracked Shard" then
+            table.insert(wrappedCrackedShards,item)
+        end
+        if item.Name == "Cracked Shard" then
+            table.insert(unwrappedCrackedShards,item)
+        end
+        if item.Name == "Tiny Shard" then
+            table.insert(tinyShards,item)
+        end
+        if item.Name == "Small Shard" then
+            table.insert(smallShards,item)
+        end
+    end
+    print("# of Wrapped Slivers = "..#wrappedCrackedShards)
+    print("# of Unwrapped Cracked Shards = "..#unwrappedCrackedShards)
+    print("# of Tiny Shards = "..#tinyShards)
+    print("# of Small Shards = "..#smallShards)
+    if #smallShards >= 2 then
+        await(game.Actions.ObjectUse(smallShards[1].Id,smallShards[2].Id))
+    end
+    if #tinyShards >= 2 then
+        await(game.Actions.ObjectUse(tinyShards[1].Id,tinyShards[2].Id))
+    end
+    if #unwrappedCrackedShards >= 2 then
+        await(game.Actions.ObjectUse(unwrappedCrackedShards[1].Id,unwrappedCrackedShards[2].Id))
+    end
+    if #wrappedCrackedShards > 0 then
+        await(game.Actions.ObjectUse(wrappedCrackedShards[1].Id,0))
+    end
+end
+
 function TurnInColoRings()
     local arbitrator = game.World.GetNearest("Master Arbitrator",DistanceType.T2D)
     local inventory = game.Character.Inventory
@@ -344,84 +443,89 @@ hud.OnRender.Add(function ()
                 end)
             end
 
+            if imgui.Button("Make Crystal Fragments") then
+                game.World.OnTick.Once(function()
+                    local makeShards = true
+                    while makeShards do
+                        game.Actions.InvokeChat("/vt stop")
+                        MakeCrystalFragments()
+                        sleep(250) -- Custom Wait
+                        makeShards = game.Character.GetInventoryCount("Wrapped Cracked Shard") > 0 or game.Character.GetInventoryCount("Cracked Shard") > 0
+                    end
+                    game.Actions.InvokeChat("/vt start")
+                end)
+            end
+
             imgui.EndTabItem()
         end
 
         -- Viridian Rise Tab
         if imgui.BeginTabItem("Viridian Rise") then
-            if imgui.BeginTable("Viridian Rise Table",2) then
+            if imgui.BeginTable("Viridian Rise Table",3) then
                 imgui.TableSetupColumn("Viridian Rise Buttons 1")
                 imgui.TableSetupColumn("Viridian Rise Buttons 2")
+                imgui.TableSetupColumn("Viridian Rise Buttons 3")
                 
                 imgui.TableNextRow()
                 imgui.TableSetColumnIndex(0)
-                if imgui.Button("VR Use Portal") then
-                    game.Actions.InvokeChat("/ub bc /ub uselp Viridian Portal")
+                if imgui.Button("Setup") then
+                    game.World.OnTick.Once(function()
+                        game.Actions.InvokeChat("/ub bc /vto minimumringtargets 20")
+                        sleep(250)
+                        game.Actions.InvokeChat("/ub bc /vto navpriorityboost true")
+                        sleep(250)
+                        game.Actions.InvokeChat("/ub bc /vto lootonlyrarecorpses true")
+                        sleep(250)
+                        game.Actions.InvokeChat("/ub bc /vto lootfellowcorpses true")
+                    end)
                 end
                 imgui.Separator()
-
                 imgui.TableSetColumnIndex(1)
-                if imgui.Button("Return After Death") then
-                    game.Actions.InvokeChat("/vt opt set enablenav true")
-                    game.Actions.InvokeChat("/vtn deru")
+                if imgui.Button("Essence Looter") then
+                    game.World.OnTick.Once(function()
+                        game.Actions.InvokeChat("/ub bc /ub opt set Networking.Tags remove VREssenceLooter")
+                        sleep(250)
+                        game.Actions.InvokeChat("/vto lootonlyrarecorpses false")
+                        sleep(250)
+                        game.Actions.InvokeChat("/vto lootpriorityboost true")
+                        sleep(250)
+                        game.Actions.InvokeChat("/ub opt set Networking.Tags add VREssenceLooter")
+                    end)
                 end
                 imgui.Separator()
-
-                imgui.TableNextRow()
-                imgui.TableSetColumnIndex(0)
+                imgui.TableSetColumnIndex(2)
                 if imgui.Button("Talk Marker") then
                     game.Actions.InvokeChat("/ub bc /ub uselp Marker")
                 end
                 imgui.Separator()
 
-                imgui.TableSetColumnIndex(1)
-                if imgui.Button("Level 5 Bridge") then
-                    game.Actions.InvokeChat("/vt nav load navs\vr-bridge-jump")
-                end
-                imgui.Separator()
-
                 imgui.TableNextRow()
                 imgui.TableSetColumnIndex(0)
-                if imgui.Button("Essence Looter") then
-                    game.World.OnTick.Once(function()
-                        game.Actions.InvokeChat("/ub bc /vto lootonlyrarecorpses true")
-                        sleep(250)
-                        game.Actions.InvokeChat("/ub bc /vto lootfellowcorpses true")
-                        sleep(250)
-                        game.Actions.InvokeChat("/vto lootonlyrarecorpses false")
-                    end)
-                end
-                imgui.Separator()
-                
-                imgui.TableSetColumnIndex(1)
                 if imgui.Button("Count Essences") then
                     game.Actions.InvokeChat("/ub bc /ub mexec $mcount=getitemcountininventorybyname[`Viridian Essence`]&&chatbox[`/f Viridian Essence Count: `+$mcount]")
                 end
                 imgui.Separator()
-
-                imgui.TableNextRow()
-                imgui.TableSetColumnIndex(0)
-                if imgui.Button("VR Setmotion Left") then
-                    game.World.OnTick.Once(function()
-                        SlideDirection(0)
-                    end)
-                end
-
                 imgui.TableSetColumnIndex(1)
-                if imgui.Button("VR Setmotion Right") then
+                if imgui.Button("Open Portal") then
                     game.World.OnTick.Once(function()
-                        SlideDirection(1)
+                        game.Actions.InvokeChat("/ub bc /vtns")
+                        sleep(250)
+                        game.Actions.InvokeChat("/ub bct VREssenceLooter /ub uselp Ancient Statue")
                     end)
                 end
+                imgui.Separator()
+                imgui.TableSetColumnIndex(2)
+                if imgui.Button("VR Use Portal") then
+                    game.Actions.InvokeChat("/ub bc /ub uselp Viridian Portal")
+                end
+                imgui.Separator()
 
                 imgui.TableNextRow()
                 imgui.TableSetColumnIndex(0)
-                if imgui.Button("VR Setmotion") then
-                    game.World.OnTick.Once(function()
-                        SlideAway()
-                    end)
+                if imgui.Button("Level 5 Bridge") then
+                    game.Actions.InvokeChat("/ub bc /vt nav load navs\\vr-bridge-jump")
                 end
-
+                
                 imgui.EndTable()
             end
 
@@ -477,6 +581,13 @@ hud.OnRender.Add(function ()
             imgui.EndTabItem()
         end
 
+        if imgui.BeginTabItem("Utility") then
+            if imgui.Button("Fake Tinker") then
+                FakeTinker()
+            end
+            imgui.EndTabItem()
+        end
+
         imgui.EndTabBar()
     end
 
@@ -487,6 +598,8 @@ hud.OnRender.Add(function ()
 end)
 
 hud.Visible = true
+
+game.World.OnObjectSelected.Add(OnObjectSelect)
 
 -- Assess all items
 for _, object in ipairs(game.Character.Inventory) do
